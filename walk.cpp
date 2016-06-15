@@ -494,7 +494,7 @@ void Walk::run()
 			Proposal prop(this);
 			accept_flag = pivot_strictly_saw(&prop);
 
-			if (this->get_npivot() == nsimplify)
+			if (this->get_npivot() >= nsimplify)
 			{
 				break;
 			}
@@ -563,7 +563,7 @@ old_energy(-1)
 
 	// if filename for initial walk starts with a 0 we generate a line
 	// for the initial walk. direction is its direction:
-	// 1=horizontal, 2=45 degs, 3=vertical, 4=60 degs 
+	// 1=horizontal, 2=45 degs, 3=vertical, 4=other
 	int direction = 4;
 	if (init_walk_fname[0] == '0') this->line_initialize(direction);
 	else
