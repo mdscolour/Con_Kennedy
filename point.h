@@ -324,6 +324,3 @@ public:
 		(*this) = op->dot(*p) + (*ref);
 	}
 };
-
-
-

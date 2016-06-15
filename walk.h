@@ -63,5 +63,4 @@ public:
 
 	double turn_frac(); // fraction of sites with a turn in the walk
 	inline int find_segment(int itime, int npivot, int* ptime);
-
 };
