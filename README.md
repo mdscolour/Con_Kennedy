@@ -1,3 +1,5 @@
-# Con_Kennedy
-try to add something
-add more
+Kennedy algorithm in continuous case
+// not yet finish
+
+v0.1 LAB version
+v0.2 merge version

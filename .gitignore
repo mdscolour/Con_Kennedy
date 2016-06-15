@@ -33,10 +33,6 @@ Debug/
 FinalWalk
 pivot.vcxproj
 pivot.vcxproj.filters
-<<<<<<< HEAD
-=======
-start
->>>>>>> local2
 
 backup.cpp
 matrix.cpp
