@@ -7,7 +7,7 @@ int main(int argc,char *argv[])
 {
 	int length=100;
 	char* init_name="0";
-	int MCStep = 3;
+	int MCStep = 10;
 	int stepnum = 1;
 	
 	if(argc>=2) length=atoi(argv[1]);

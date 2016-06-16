@@ -38,7 +38,7 @@ void Walk::clean_pivot()
 // implicit pivot data structure
 {
 	npivot = 0;
-	igroup[0] = 0;
+	igroup[0].identity();
 	shift[0].zero();
 	// segment number iseg corresponds to times [ptime[iseg],ptime[iseg+1])
 	// So when npivot=0 we should have : 
@@ -135,14 +135,14 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 // where count is the number of distance computations done.
 // This return value is only used to study how long the routine takes. 
 {
-	OPERATION_NAME *igroup_jseg, *igroup_iseg;
+	OPERATION_NAME *pgroup_jseg, *pgroup_iseg;
 	int i, j, ip, jp, iseg, jseg, imin, imax, jmin, jmax;
 	int separation, min_separation, sep_mod;
 	MODEL_NAME origin, transi, transj, pp, stepsp, stepsi, stepsj, shift_jseg, shift_iseg;
 	int count, changei_flag;
 	int pivot_loc = prop->pivot_loc;
-	OPERATION_NAME* isym = &(prop->op);
-	OPERATION_NAME* invisym = &(prop->invop);
+	OPERATION_NAME* poper = &(prop->op);
+	OPERATION_NAME* pinvoper = &(prop->invop);
 	// pivot is given by w[t] -> g (w[t]-w[pivot_loc])+w[pivot_loc]
 	// this is equivalent to w[t] -> g w[t] + trans 
 	// where trans= w[pivot_loc] - g w[pivot_loc]
@@ -151,9 +151,9 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	origin.zero();
 	iseg = find_segment(pivot_loc, npivot, ptime);
 	stepsp.euclidean_op(steps + pivot_loc, shift + iseg, &igroup[iseg]);
-	transi.euclidean_op(&stepsp, &origin, isym);
+	transi.euclidean_op(&stepsp, &origin, poper);
 	transi = stepsp - transi;
-	transj.euclidean_op(&stepsp, &origin, invisym);
+	transj.euclidean_op(&stepsp, &origin, pinvoper);
 	transj = stepsp - transj;
 	count = 0;
 
@@ -192,26 +192,24 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 			iseg = find_segment(i, npivot, ptime);
 			stepsi.euclidean_op(steps + i, shift + iseg, &igroup[iseg]);
 			// pp is w[i] after pivot
-			pp.euclidean_op(&stepsi, &transi, isym);
+			pp.euclidean_op(&stepsi, &transi, poper);
 			min_separation = nsteps;
 			jseg = npivot;   // can change to jseg=iseg; ?
 			shift_jseg = shift[jseg] - pp;
-			igroup_jseg = &igroup[jseg];
+			pgroup_jseg = &igroup[jseg];
 			for (jp = jmax; jp>j;) // note that j is decreased
 			{
 				if (ptime[jseg]>jp)
 				{
-#ifdef USE_FIND_SEGMENT
-					jseg = find_segment(jp, npivot, ptime);
-#else 
+					//jseg = find_segment(jp, npivot, ptime);
 					while (ptime[jseg]>jp) jseg--;
-#endif
 					shift_jseg = shift[jseg] - pp;
-					igroup_jseg = &igroup[jseg];
+					pgroup_jseg = &igroup[jseg];
 				}
-				// stepsj is w[jp]   
-				stepsj.euclidean_op(steps + jp, &shift_jseg, igroup_jseg);
+				// stepsj is w[jp] - w[i]   
+				stepsj.euclidean_op(steps + jp, &shift_jseg, pgroup_jseg);
 				separation = int(stepsj.WellSeparate());
+				//separation = stepsj.WellSeparate();
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -220,15 +218,12 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 				}
 				else
 				{
-#ifdef USE_THIRD
-					sep_mod = separation % 3;
-					min_separation = (2 * separation + sep_mod) / 3;
-					jp -= 1 + (separation - sep_mod) / 3;
-#else 
+					//sep_mod = separation % 3;
+					//min_separation = (2 * separation + sep_mod) / 3;
+					//jp -= 1 + (separation - sep_mod) / 3; 
 					sep_mod = separation % 2;
 					min_separation = (separation + sep_mod) / 2;
 					jp -= 1 + (separation - sep_mod) / 2;
-#endif
 				}
 			} // end loop on jp
 			i += min_separation;
@@ -241,28 +236,26 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 			// Equivalently we can use a lower bound on distance from inverse
 			// pivoted omega[j] and {omega[ip]: pivot_loc<ip<i}
 			// This lower bound will be min_separation
-			// stepsj is w[j]   
+			// stepsj is w[j] before this pivot
 			jseg = find_segment(j, npivot, ptime);
 			stepsj.euclidean_op(steps + j, shift + jseg, &igroup[jseg]);
-			pp.euclidean_op(&stepsj, &transj, invisym);
+			pp.euclidean_op(&stepsj, &transj, pinvoper);
 			min_separation = nsteps;
 			iseg = 0;
 			shift_iseg = shift[iseg] - pp;
-			igroup_iseg = &igroup[iseg];
+			pgroup_iseg = &igroup[iseg];
 			for (ip = imin; ip<i;) // note that i is increased
 			{
 				if (ptime[iseg + 1] <= ip) // check this
 				{
-#ifdef USE_FIND_SEGMENT
-					iseg = find_segment(ip, npivot, ptime);
-#else 
+					//iseg = find_segment(ip, npivot, ptime);
 					while (ptime[iseg + 1] <= ip) iseg++;
-#endif
 					shift_iseg = shift[iseg] - pp;
-					igroup_iseg = &igroup[iseg];
+					pgroup_iseg = &igroup[iseg];
 				}
-				stepsi.euclidean_op(steps + ip, &shift_iseg, igroup_iseg);
+				stepsi.euclidean_op(steps + ip, &shift_iseg, pgroup_iseg);
 				separation = int(stepsi.WellSeparate());
+				//separation = stepsi.WellSeparate();
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -271,15 +264,12 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 				}
 				else
 				{
-#ifdef USE_THIRD
-					sep_mod = separation % 3;
-					min_separation = (2 * separation + sep_mod) / 3;
-					ip += 1 + (separation - sep_mod) / 3;
-#else 
+					//sep_mod = separation % 3;
+					//min_separation = (2 * separation + sep_mod) / 3;
+					//ip += 1 + (separation - sep_mod) / 3;
 					sep_mod = separation % 2;
 					min_separation = (separation + sep_mod) / 2;
 					ip += 1 + (separation - sep_mod) / 2;
-#endif
 				}
 			} // end loop on ip
 			j -= min_separation;
@@ -289,12 +279,12 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 
 	// If we reach this point the walk is self-avoiding. 
 	// The pivot operations were not done to the walk. So we must do them.
-	add_pivot(pivot_loc, isym, transi);
+	add_pivot(pivot_loc, poper, transi);
 	return(count);
 
 } // end pivot_strictly_saw()
 
-void Walk::add_pivot(int pivot_loc, OPERATION_NAME* isym, MODEL_NAME trans)
+void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, MODEL_NAME trans)
 {
 	int iseg, ipivot;
 	MODEL_NAME pp;
@@ -325,8 +315,8 @@ void Walk::add_pivot(int pivot_loc, OPERATION_NAME* isym, MODEL_NAME trans)
 	for (ipivot = iseg; ipivot <= npivot; ipivot++)
 	{
 		pp = shift[ipivot];
-		shift[ipivot].euclidean_op(&pp, &trans, isym);
-		igroup[ipivot] = isym->dot(igroup[ipivot]);
+		shift[ipivot].euclidean_op(&pp, &trans, poper);
+		igroup[ipivot] = poper->dot(igroup[ipivot]);
 	} // end loop on ipivot
 
 } // add_pivot()
@@ -395,7 +385,7 @@ void Walk::run()
 	}
 
 	// print the accept ratio and turn fraction
-	if (false) 
+	if (true) 
 	{
 		printf("%d generation, turn=%lf, MC accept ratio=%lf\n",
 			generation, turn_frac(), 100.0 / double(MCtrial));

@@ -28,7 +28,7 @@ private:
 	{
 	public:
 		int pivot_loc;
-		OPERATION_NAME op;
+		OPERATION_NAME op;// 0 is not included
 		OPERATION_NAME invop;
 
 		Walk* pw;
