@@ -38,7 +38,7 @@ private:
 public:
 
 	// Central function of initialization
-	Walk(int tnsteps = 1000, char* tinit_walk_fname = "0", int tnsimplify = 3, char* tfinal_walk_fname = "FinalWalk", int tn_inner = 100000, int tno_saw = 0, int tmax_npivot = 0);
+	Walk(int tnsteps = 1000, char* tinit_walk_fname = "0", int tnsimplify = 3, char* tfinal_walk_fname = "FinalWalk", int tn_inner = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
 	void run();

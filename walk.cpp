@@ -419,6 +419,7 @@ generation(0)
 {
 	if(nsimplify == 0) nsimplify = int(sqrt(double(nsteps / 40)));
 	if(max_npivot == 0) max_npivot = nsimplify+100;
+	if(n_inner == 0) n_inner = nsimplify*10;
 #ifdef linux
 	struct timeval tpstart;
 	gettimeofday(&tpstart, NULL);

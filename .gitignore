@@ -28,6 +28,8 @@
 *.out
 *.app
 
+*.cpp~
+*.h~
 *.cd
 Debug/
 FinalWalk
