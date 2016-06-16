@@ -1,3 +1,4 @@
+// The globla definition for everywhere, mainly macro or libary
 #pragma once
 #define _CRT_SECURE_NO_DEPRECATE
 #define M_PI       3.14159265358979323846
@@ -7,6 +8,8 @@
 #include <iostream>
 using namespace std;
 
+// Define "RNG_NAME" for random number, in linux using drand48(), in windows using rand(),
+// the initialization of the seed is in the constructor of class Walk
 #ifdef linux
 #include <sys/time.h>
 #define RNG_NAME drand48
@@ -21,9 +24,11 @@ inline double GetRand()
 #define RNG_NAME GetRand
 #endif
 
-
-#define MODELNAME Sphere
+// Other parameters
+#define MODEL_NAME Sphere
 #define RADIUS 0.4
+#define OPERATION_NAME OpMatrix
+
 #define RADIANNUM 100
 //#define NUM_SYM 47
 #define NUM_SYM 119*RADIANNUM*RADIANNUM*RADIANNUM

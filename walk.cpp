@@ -22,98 +22,18 @@ inline int Walk::find_segment(int itime, int npivot, int* ptime)
 	return(isegl);
 } // find_segment()
 
-// void Walk::setup_symmetry()
-// // this routine computes group_product[][] and group_inverse[] entries
-// // by trial and error 
-// {
-// 	int i, j, k;
-// 	Sphere origin, p1, p2, q1, q2, temp;
-// 	Sphere p3, q3;
-// 
-// 	origin.zero();
-// 
-// 	for (i = 0; i <= NUM_SYM; i++)
-// 	{
-// 		cout << "product tensor doing " << i << endl;
-// 		for (j = 0; j <= NUM_SYM; j++)  ///////////////////
-// 		{
-// 			
-// 			group_product[i][j] = -1;
-// 			/*p1.assign(0, 0, 1);
-// 			temp = p1; p1.euclidean_op(&temp, &origin, j);
-// 			temp = p1; p1.euclidean_op(&temp, &origin, i);
-// 			p2.assign(0, 1, 0);
-// 			temp = p2; p2.euclidean_op(&temp, &origin, j);
-// 			temp = p2; p2.euclidean_op(&temp, &origin, i);
-// 			p3.assign(1, 0, 0);
-// 			temp = p3; p3.euclidean_op(&temp, &origin, j);
-// 			temp = p3; p3.euclidean_op(&temp, &origin, i);
-// 			for (k = 0; k <= NUM_SYM; k++)
-// 			{
-// 			q1.assign(0, 0, 1);
-// 			temp = q1; q1.euclidean_op(&temp, &origin, k);
-// 			q2.assign(0, 1, 0);
-// 			temp = q2; q2.euclidean_op(&temp, &origin, k);
-// 			q3.assign(1, 0, 0);
-// 			temp = q3; q3.euclidean_op(&temp, &origin, k);
-// 			if (p1 == q1 && p2 == q2 && p3 == q3) group_product[i][j] = k;
-// 			}*/
-// 			group_product[i][j] = RMatrix(RMatrix(i).dot(RMatrix(j))).GetIndex();
-// 			if (group_product[i][j] == -1)
-// 			{
-// 				printf("ERROR in setup_symmetry() %ld %ld\n", i, j);
-// 				system("pause");
-// 				exit(1);
-// 			}
-// 		}
-// 	}
-// 	cout << "product tensor done" << endl;
-// 	for (i = 0; i <= NUM_SYM; i++)
-// 	{
-// 		group_inverse[i] = -1;
-// 		/*for (k = 0; k <= NUM_SYM; k++)
-// 		{
-// 			p1.assign(0, 0, 1);
-// 			temp = p1; p1.euclidean_op(&temp, &origin, i);
-// 			temp = p1; p1.euclidean_op(&temp, &origin, k);
-// 			q1.assign(0, 0, 1);
-// 			p2.assign(0, 1, 0);
-// 			temp = p2; p2.euclidean_op(&temp, &origin, i);
-// 			temp = p2; p2.euclidean_op(&temp, &origin, k);
-// 			q2.assign(0, 1, 0);
-// 			p3.assign(1, 0, 0);
-// 			temp = p3; p3.euclidean_op(&temp, &origin, i);
-// 			temp = p3; p3.euclidean_op(&temp, &origin, k);
-// 			q3.assign(1, 0, 0);
-// 			if (p1 == q1 && p2 == q2 && p3 == q3) group_inverse[i] = k;
-// 		}*/
-// 		group_inverse[i] = RMatrix(i).GetInverseIndex();
-// 		if (group_inverse[i] == -1)
-// 		{
-// 			printf("ERROR in setup_symmetry()_inverse\n");
-// 			printf("%ld\n", RMatrix(i).GetInverseIndex());
-// 			system("pause");
-// 			exit(1);
-// 		}
-// 	}
-// 	cout << "inverse tensor done" << endl;
-// 	return;
-// 
-// } // end setup_symmetry()
-
-MODELNAME Walk::step_rval(int i)
+MODEL_NAME Walk::GetStepi(int i)
 // This routine computes the ith point on the walk from the complicated 
 // data structure. Often we duplicate this code for speed rather than call this
 {
-	MODELNAME temp;
+	MODEL_NAME temp;
 	int iseg;
 	iseg = find_segment(i, npivot, ptime);
 	temp.euclidean_op(steps + i, shift + iseg, &igroup[iseg]);
 	return(temp);
 } // end step_rval
 
-
-void Walk::initialize()
+void Walk::clean_pivot()
 // NB this does not create a walk. It only initializes things used by the 
 // implicit pivot data structure
 {
@@ -127,13 +47,10 @@ void Walk::initialize()
 }
 
 void Walk::line_initialize(int direction)
-{ // initializes walk to be straight line
-	// 1 is horizontal 
-	// 2 is 45 degs
-	// 3 is vertical
+{ 
 	int i;
 	double i1, i2, i3;
-	initialize();
+	clean_pivot();
 	i1 = 0; i2 = 0; i3 = 0;
 	for (i = 0; i <= nsteps; i++)
 	{
@@ -142,17 +59,10 @@ void Walk::line_initialize(int direction)
 		case 1: i1++; break;
 		case 2: if (i % 2 == 0) i2++; else i1++; break;
 		case 3: i2++; break;
-		case 4: {int resd = i % 3;
-			if (resd == 0) i1 += 1.47;
-			else if (resd == 1) i1 += 1.44;
-			else if (resd == 2) i1 += 1.37;
-			else printf("line init, wrong");
-		}break;
 		default: printf("bad case in line_initialize() d\n"); exit(0); break;
 		}
 	}
 	old_energy = GetEnergy();
-	//printf("old energy: %lf\n", old_energy);
 } // end line_initialize()
 
 void Walk::deallocate()
@@ -174,14 +84,8 @@ void Walk::print(FILE *fptr)
 	for (i = 0; i <= nsteps; i++) steps[i].print(fptr);
 	if (npivot>0)
 	{
-		fprintf(fptr, "npivot=%ld\n", npivot);
-// 		fprintf(fptr, "iseg     ptime   igroup    shift \n");
-// 		for (i = 0; i <= npivot; i++)
-// 		{
-// 			fprintf(fptr, "%4ld  %8ld   %2ld    ", i, ptime[i], igroup[i]);
-// 			shift[i].print(fptr);
-// 		} // end loop on i 
-	} // end if (npivot>0)
+		printf("Error, npivot=%ld while printing\n", npivot);
+	}
 } // end walk::print()
 
 void Walk::scan(FILE *fptr)
@@ -189,7 +93,7 @@ void Walk::scan(FILE *fptr)
 	int i;
 	fscanf(fptr, "%d %d %lf", &nsteps, &generation, &old_energy);
 	for (i = 0; i <= nsteps; i++) steps[i].scan(fptr);
-	initialize();
+	clean_pivot();
 } // end walk::scan()
 
 // void Walk::plot(FILE *fptr)
@@ -220,19 +124,6 @@ void Walk::scan(FILE *fptr)
 // 	for (i = 0; i <= nsteps; i++) steps[i] = this->steps[i];
 // 	return(*this);
 // }
-// 
-// float Walk::turn_frac()
-// {
-// 	// Finds fraction of times at which walk turns.
-// 	// For hexagonal lattice we look at next nearest neighbors
-// 	int i, count;
-// 	count = 0;
-// 
-// 	for (i = 1; i<nsteps; i++)
-// 	if (fabs((steps[i - 1] - steps[i + 1]).distance() - 2.) > 1.e-5) count++;
-// 
-// 	return(float(count) / float(nsteps - 1));
-// } // end turn_frac
 
 int Walk::pivot_strictly_saw(Proposal* prop)
 // This is the version that changes i and j "simultaneously"
@@ -244,14 +135,14 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 // where count is the number of distance computations done.
 // This return value is only used to study how long the routine takes. 
 {
-	OpMatrix *igroup_jseg, *igroup_iseg;
+	OPERATION_NAME *igroup_jseg, *igroup_iseg;
 	int i, j, ip, jp, iseg, jseg, imin, imax, jmin, jmax;
 	int separation, min_separation, sep_mod;
-	MODELNAME origin, transi, transj, pp, stepsp, stepsi, stepsj, shift_jseg, shift_iseg;
+	MODEL_NAME origin, transi, transj, pp, stepsp, stepsi, stepsj, shift_jseg, shift_iseg;
 	int count, changei_flag;
 	int pivot_loc = prop->pivot_loc;
-	OpMatrix* isym = &(prop->op);
-	OpMatrix* invisym = &(prop->invop);
+	OPERATION_NAME* isym = &(prop->op);
+	OPERATION_NAME* invisym = &(prop->invop);
 	// pivot is given by w[t] -> g (w[t]-w[pivot_loc])+w[pivot_loc]
 	// this is equivalent to w[t] -> g w[t] + trans 
 	// where trans= w[pivot_loc] - g w[pivot_loc]
@@ -403,10 +294,10 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 
 } // end pivot_strictly_saw()
 
-void Walk::add_pivot(int pivot_loc, OpMatrix* isym, MODELNAME trans)
+void Walk::add_pivot(int pivot_loc, OPERATION_NAME* isym, MODEL_NAME trans)
 {
 	int iseg, ipivot;
-	MODELNAME pp;
+	MODEL_NAME pp;
 
 	if (npivot>max_npivot - 1)
 	{
@@ -443,19 +334,19 @@ void Walk::add_pivot(int pivot_loc, OpMatrix* isym, MODELNAME trans)
 void Walk::simplify()
 // carry out the pivot operations implicit in the walk, so npivot -> 0 
 {
-	OpMatrix*  igroup_ipivot;
+	OPERATION_NAME*  pOper_ipivot;
 	int ipivot, itime;
-	MODELNAME shift_ipivot, pp;
+	MODEL_NAME shift_ipivot, pp;
 
 	// even on the 0th segment there may be something to do 
 	for (ipivot = 0; ipivot<npivot; ipivot++)
 	{
 		shift_ipivot = shift[ipivot];
-		igroup_ipivot = &igroup[ipivot];
+		pOper_ipivot = &igroup[ipivot];
 		for (itime = ptime[ipivot]; itime<ptime[ipivot + 1]; itime++)
 		{
 			pp = steps[itime];
-			steps[itime].euclidean_op(&pp, &shift_ipivot, igroup_ipivot);
+			steps[itime].euclidean_op(&pp, &shift_ipivot, pOper_ipivot);
 		}
 	} // end loop on ipivot
 
@@ -466,78 +357,65 @@ void Walk::simplify()
 		steps[itime].euclidean_op(&pp, shift + npivot, &igroup[npivot]);
 	}
 
-	initialize();
+	clean_pivot();
 } // end walk::simplify()
 
 void Walk::run()
 {
 	generation++;
-	//old_energy = GetEnergy();
-	//printf("old energy: %lf\n", old_energy);
-	int inner;
-	// sign of accept flag indicates walk was accepted (>0) or rejected (<0) 
-	// |accept_flag| is the number of tests done in the call to pivot routine
-	int accept_flag = 0;
-	double accept_ratio = 0.;
-
-	////////////////////////////////////////////////////////////
-	//      initialize running totals to zero                 //
-	////////////////////////////////////////////////////////////
-	int naccept = 0;
-	
 	int MCtrial = 0;
-	while (MCtrial < 10)
+	const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
+	while (MCtrial < MaxTrial) 
 	{
 		MCtrial++;
-		for (inner = 1; inner <= n_inner; inner++)
+		for (int inner = 1; inner <= n_inner; inner++)
 		{
 			Proposal prop(this);
-			accept_flag = pivot_strictly_saw(&prop);
-
-			if (this->get_npivot() == nsimplify)
+			pivot_strictly_saw(&prop);
+			if (npivot >= nsimplify)
 			{
 				break;
 			}
-		} // end loop on inner
+		} // end loop on inner then #nsimplify successful pivot is prepared
 
 		double et = GetEnergy();
-		if (et<old_energy)
-		//if (RNG_NAME() <= (exp(et / old_energy) - 1) / (exp(1) - 1))
+		if (AcceptOrNot(et,old_energy))
 		{
-			printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
+			//printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
 			old_energy = et;
 			simplify();
-			naccept++;
 			break;
 		}
 		else
 		{
 			//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
-			initialize();
-			naccept = 0;
+			if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
+			clean_pivot();
 		}		
 	}
-	// print the accept ratio and turn fraction.
+
+	// print the accept ratio and turn fraction
 	if (false) 
 	{
-		accept_ratio = 100 * double(naccept) / double(MCtrial);
-		printf("%ld iterations, turn=%lf, MC accept ratio=%lf\n",
-			inner, this->turn_frac(), accept_ratio);
+		printf("%d generation, turn=%lf, MC accept ratio=%lf\n",
+			generation, turn_frac(), 100.0 / double(MCtrial));
 	}
-	// record the walk
+	
+	// record the walk 
 	Record(); 
 }
 
-Walk::Walk(int tnsteps, char* tinit_walk_fname, int tnsimplify, int tn_inner, int tno_saw, int tmax_npivot, int tprint_freq) :
+Walk::Walk(int tnsteps, char* tinit_walk_fname, int tnsimplify, char* tfinal_walk_fname, int tn_inner, int tno_saw, int tmax_npivot) :
 n_inner(tn_inner),
 max_npivot(tmax_npivot),
 no_saw(tno_saw),
 nsteps(tnsteps), 
 init_walk_fname(tinit_walk_fname), 
 nsimplify(tnsimplify),
-final_walk_fname("FinalWalk"),
+final_walk_fname(tfinal_walk_fname),
 data_fname("data"),
-old_energy(-1)
+old_energy(-1),
+generation(0)
 {
 	if(nsimplify == 0) nsimplify = int(sqrt(double(nsteps / 40)));
 	if(max_npivot == 0) max_npivot = nsimplify+100;
@@ -551,11 +429,11 @@ old_energy(-1)
 	srand(unsigned int(time(NULL)));
 #endif
 
-	steps = new MODELNAME[nsteps + 1];
+	steps = new MODEL_NAME[nsteps + 1];
 
 	ptime = new int[max_npivot + 2];// this may be one larger than needed 
-	igroup = new OpMatrix[max_npivot + 1];
-	shift = new MODELNAME[max_npivot + 1];
+	igroup = new OPERATION_NAME[max_npivot + 1];
+	shift = new MODEL_NAME[max_npivot + 1];
 
 	////////////////////////////////////////////////////////////
 	//  initialize walk to a line or  read walk from file     //
@@ -563,9 +441,9 @@ old_energy(-1)
 
 	// if filename for initial walk starts with a 0 we generate a line
 	// for the initial walk. direction is its direction:
-	// 1=horizontal, 2=45 degs, 3=vertical, 4=60 degs 
-	int direction = 4;
-	if (init_walk_fname[0] == '0') this->line_initialize(direction);
+	// 1=horizontal, 2=45 degs, 3=vertical
+	int direction = 2;
+	if (init_walk_fname[0] == '0') line_initialize(direction);
 	else
 	{
 		FILE *fptr = fopen(init_walk_fname, "r");
@@ -579,7 +457,7 @@ old_energy(-1)
 	}
 
 	// checks that initial walk is ok
- 	printf("Initial walk has turn fraction %lf \n", this->turn_frac());
+ 	//printf("Initial walk has turn fraction %lf \n", this->turn_frac());
 }
 
 double Walk::turn_frac()
@@ -593,26 +471,6 @@ double Walk::turn_frac()
 	return(double(count) / double(nsteps - 1));
 } // end turn_frac
 
-double Walk::GetEnergy()
-{
-	double r = 99;
-	double etemp = 0;
-	for (int i = 0; i <= nsteps; i++)
-	{	
-		if (i % 3 == 2) i++;
-		for (int j = 2; j <= nsteps;j=j+3)
-		{
-			r = (step_rval(i) - step_rval(j)).distance();
-			if (1<r && r<10)
-			{
-				etemp += -1.0 / r;
-			}
-			if (r < 1) etemp += -1;
-		}
-	}
-	return etemp;
-}
-
 void Walk::Record()
 {
 	FILE *fptr;
@@ -625,4 +483,36 @@ void Walk::Record()
 	fptr = fopen(final_walk_fname, "w");
 	this->print(fptr);
 	fclose(fptr);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// This is the part for MC
+//////////////////////////////////////////////////////////////////////////
+
+double Walk::GetEnergy()
+{
+	return -1; // now is a empty function
+	double r = 99;
+	double etemp = 0;
+	for (int i = 0; i <= nsteps; i++)
+	{
+		if (i % 3 == 2) i++;
+		for (int j = 2; j <= nsteps; j = j + 3)
+		{
+			r = (GetStepi(i) - GetStepi(j)).distance();
+			if (1 < r && r < 10)
+			{
+				etemp += -1.0 / r;
+			}
+			if (r < 1) etemp += -1;
+		}
+	}
+	return etemp;
+}
+
+bool Walk::AcceptOrNot(double newE, double oldE)
+{
+	return true;
+	//return(newE < oldE);
+	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
 }

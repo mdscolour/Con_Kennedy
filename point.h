@@ -1,12 +1,13 @@
 #pragma once
 #include "global.h"
 
+// Template class of of point, all ordinary operation of 3x3 point is available
 template <class T> 
 class GPoint
 {
 public:
 	T x, y, z;
-	//everything just inline b.c. short
+	//everything just inline
 	GPoint(){}
 	GPoint(T a, T b, T c) :x(a), y(b), z(c){}
 	GPoint(const GPoint& p) :x(p.x), y(p.y), z(p.z){}
@@ -32,13 +33,6 @@ public:
 	void assign(T xx, T yy, T zz) { x = xx; y = yy; z = zz; }
 
 	T distance(){return(T(sqrt(x*x + y*y + z*z)));}
-	
-	virtual T WellSeparate(){ T t = abs(x) + abs(y) + abs(z); return((t>1.e-5) ? t : 0); }
-	virtual void print(FILE *fptr){ fprintf(fptr, "%f %f %f\n", x, y, z); }
-	virtual void scan(FILE *fptr){ fscanf(fptr, "%f %f %f\n", &x, &y, &z); }
-// 	virtual void print(FILE *fptr) = 0;
-// 	virtual void scan(FILE *fptr) = 0;
-
 	GPoint& mirror(int isym) // isym 0-7
 	{
 		switch (isym) {
@@ -50,11 +44,18 @@ public:
 		case 5:   x = -x;         z = -z;  break;   // -+-
 		case 6:   x = -x;  y = -y;         break;   // --+
 		case 7:   x = -x;  y = -y;  z = -z;  break;   // ---
-		default: printf("wrong mirror index, not 0-7 \n");break;
+		default: printf("wrong mirror index, not 0-7 \n"); break;
 		} // end switch on isym_sign
 		return (*this);
 	}
-	virtual void euclidean_op(GPoint* q, GPoint* p, int isym)
+
+// Pointed out by Andreas, it doesn't need virtual function here, and I found here not even need template,
+// just hide the following function in the children is enough.
+// So the following function is better being hidden in the child. And a global macro is used to switch the function.
+	T WellSeparate(){ T t = abs(x) + abs(y) + abs(z); return((t>1.e-5) ? t : 0); }
+	void print(FILE *fptr){ fprintf(fptr, "%f %f %f\n", x, y, z); }
+	void scan(FILE *fptr){ fscanf(fptr, "%f %f %f\n", &x, &y, &z); }
+	void euclidean_op(GPoint* q, GPoint* p, int isym)
 	{
 		switch (isym % 6) {
 		case 0:   x = (*q).x;     y = (*q).y;     z = (*q).z;  break;   // identity
@@ -86,79 +87,6 @@ public:
 		y += (*p).y;
 		z += (*p).z;
 	} // end point::euclidean_op()
-
-	virtual GPoint& do_op(GPoint* p, int isym)
-	{
-		GPoint<T>* q = new GPoint<T>(x - (p->x), y - (p->y), z - (p->z));
-		switch (isym % 6) {
-		case 0:   x = (*q).x;     y = (*q).y;     z = (*q).z;  break;   // identity
-		case 1:   x = (*q).y;     y = (*q).x;     z = (*q).z;  break;   // (xy)
-		case 2:   x = (*q).x;     y = (*q).z;     z = (*q).y;  break;   // (yz)
-		case 3:   x = (*q).z;     y = (*q).y;     z = (*q).x;  break;   // (xz)
-		case 4:   x = (*q).z;     y = (*q).x;     z = (*q).y;  break;   // (xyz)
-		case 5:   x = (*q).y;     y = (*q).z;     z = (*q).x;  break;   // (xzy) 
-		default:
-			printf("bad case cubic isym_perm in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_perm
-		switch (isym / 6) {
-		case 0:                        break;   // +++
-		case 1:                 z = -z;  break;   // ++-
-		case 2:          y = -y;         break;   // +-+
-		case 3:          y = -y;  z = -z;  break;   // +--
-		case 4:   x = -x;                break;   // -++
-		case 5:   x = -x;         z = -z;  break;   // -+-
-		case 6:   x = -x;  y = -y;         break;   // --+
-		case 7:   x = -x;  y = -y;  z = -z;  break;   // ---
-		default:
-			printf("bad case cubic isym_sign in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_sign
-		x += (*p).x;
-		y += (*p).y;
-		z += (*p).z;
-		delete q;
-		return(*this);
-	} // end point::do_op()
-
-	virtual GPoint get_op(GPoint* p, int isym)
-	{
-		GPoint<T>* q = new GPoint<T>(x - (p->x), y - (p->y), z - (p->z));
-		T x, y, z;
-		switch (isym % 6) {
-		case 0:   x = (*q).x;     y = (*q).y;     z = (*q).z;  break;   // identity
-		case 1:   x = (*q).y;     y = (*q).x;     z = (*q).z;  break;   // (xy)
-		case 2:   x = (*q).x;     y = (*q).z;     z = (*q).y;  break;   // (yz)
-		case 3:   x = (*q).z;     y = (*q).y;     z = (*q).x;  break;   // (xz)
-		case 4:   x = (*q).z;     y = (*q).x;     z = (*q).y;  break;   // (xyz)
-		case 5:   x = (*q).y;     y = (*q).z;     z = (*q).x;  break;   // (xzy) 
-		default:
-			printf("bad case cubic isym_perm in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_perm
-		switch (isym / 6) {
-		case 0:                        break;   // +++
-		case 1:                 z = -z;  break;   // ++-
-		case 2:          y = -y;         break;   // +-+
-		case 3:          y = -y;  z = -z;  break;   // +--
-		case 4:   x = -x;                break;   // -++
-		case 5:   x = -x;         z = -z;  break;   // -+-
-		case 6:   x = -x;  y = -y;         break;   // --+
-		case 7:   x = -x;  y = -y;  z = -z;  break;   // ---
-		default:
-			printf("bad case cubic isym_sign in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_sign
-		x += (*p).x;
-		y += (*p).y;
-		z += (*p).z;
-		delete q;
-		return(GPoint(x,y,z));
-	} // end point::do_op()
 };
 
 // class fPoint :public GPoint<float>
@@ -178,6 +106,7 @@ public:
 // 	virtual void print(FILE *fptr){ fprintf(fptr, "%d %d %d\n", x, y, z); }
 // };
 
+// 3x3 matrix
 class Matrix
 {
 public:
@@ -205,6 +134,8 @@ public:
 	//Sphere dot(Sphere v){return GPoint<double>(row1.dot(v),row2.dot(v),row3.dot(v));}
 
 };
+
+// 3x3 rotation matrix
 class RMatrix : public Matrix
 {
 public:
@@ -264,6 +195,7 @@ public:
 	Matrix rotyz(double theta){ return Matrix(1, 0, 0, 0, cos(theta), -sin(theta), 0, sin(theta), cos(theta)); }
 };
 
+// 3x3 reflection matrix
 class RefMatrix : public Matrix
 {
 public:
@@ -288,22 +220,24 @@ public:
 	}
 };
 
-class OpMatrix :public Matrix
+// The real used operation matrix, which is nothing but reflection matrix dot rotation matrix.
+// can only be constructed by matrix of a integer, the integer must be 0 to (num_rotation*num_reflection-1)*RADIANNUM*RADIANNUM*RADIANNUM
+class OPERATION_NAME :public Matrix
 {
 public:
-	OpMatrix(){}
-	OpMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
-	OpMatrix(int isym)
+	OPERATION_NAME(){}
+	OPERATION_NAME(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
+	OPERATION_NAME(int isym)
 	{
 		RMatrix temp(isym);
 		isym /= RADIANNUM;
 		isym /= RADIANNUM;
 		isym /= RADIANNUM;
-		new(this) OpMatrix(RefMatrix(isym / ROTNUM).dot(temp));
+		new(this) OPERATION_NAME(RefMatrix(isym / ROTNUM).dot(temp));
 	}
 };
 
-
+// The real model which is a hard sphere
 class Sphere :public GPoint<double>
 {
 public:
@@ -312,14 +246,17 @@ public:
 	Sphere(double a, double b, double c) :GPoint(a, b, c), r(RADIUS){}
 	Sphere(double a, double b, double c, double d) :GPoint(a, b, c), r(d){}
 	Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
-	virtual void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
-	virtual void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
-	virtual double WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? t : 0); }
-	virtual Sphere get_op(GPoint<double>* ref, OpMatrix* op)
+
+	Sphere get_op(GPoint<double>* ref, OPERATION_NAME* op)
 	{
-		return( op->dot(*this)+(*ref));
+		return(op->dot(*this) + (*ref));
 	}
-	virtual void euclidean_op(GPoint<double>* p,GPoint<double>* ref, OpMatrix* op)
+
+// hide the function of the base
+	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
+	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
+	double WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? t : 0); }
+	void euclidean_op(GPoint<double>* p,GPoint<double>* ref, OPERATION_NAME* op)
 	{
 		(*this) = op->dot(*p) + (*ref);
 	}

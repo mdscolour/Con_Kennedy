@@ -1,5 +1,8 @@
 #include "point.h"
 
+// The functions which are not inline will appear here
+
+// Inverse of the 3x3 matrix
 Matrix Matrix::inv()
 {
 	double determinant = row1.x*(row2.y*row3.z - row3.y*row2.z)

@@ -1,6 +1,8 @@
 #include "global.h"
 #include "point.h"
 #include "walk.h"
+
+// Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
 int main(int argc,char *argv[])
 {
 	int length=100;
