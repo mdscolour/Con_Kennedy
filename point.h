@@ -1,3 +1,30 @@
+/**************************************************************************
+The basic of the monomer of the model. Containing this class:
+GPoint<T> --- 3d point and general operation
+
+Matrix --- 3d matrix and general operation
+
+RMatrix --- rotation matrix, RMatrix() will return a random one.
+
+RefMatrix --- reflection matrix, RefMatrix() will return a random one.
+
+This two are more important:
+
+OpMatrix --- matrix of opeation, currently is just combination of rotation and reflection.
+For safety, OpMatrix() will return a blank matrix. 
+OpMatrix("rand") will return a random one, where most of the case we want.
+
+Sphere --- hard shpere.
+
+In class Walk, (a-b).WellSeparate() will be called to judge whether a and b overlapped, and how to increase the index.
+When the return is 0, they are overlapped and deny the pivot. 
+When not 0 the index will be increased by the amount of the return, i.e. within (return-1) steps will be regarded as safe.
+
+In class Walk, a.euclidean_op(&b,&c,&op) will be called to realize the function: op.dot(b)+c and store in a.
+
+Override or hide the above two function if a new model is made. (no vitural function is needed in this version.)
+**************************************************************************/
+
 #pragma once
 #include "global.h"
 
@@ -114,7 +141,7 @@ public:
 	GPoint<double> row2;
 	GPoint<double> row3;
 	Matrix(){}
-	Matrix(char* key){ if (key == "identity")this->identity(); }
+	Matrix(const char* key){ if (key == "identity")this->identity(); }
 	Matrix(GPoint<double> a, GPoint<double> b, GPoint<double> c) :row1(a), row2(b), row3(c){}
 	Matrix(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3) :row1(x1, y1, z1), row2(x2, y2, z2), row3(x3, y3, z3){}
 	//Matrix(RMatrix x) :row1(x.row1), row2(x.row2), row3(x.row3){}
@@ -252,7 +279,7 @@ class OpMatrix :public Matrix
 {
 public:
 	OpMatrix(){}
-	OpMatrix(char* key){ if (key == "rand")new(this) OpMatrix(RefMatrix().dot(RMatrix())); }
+	OpMatrix(const char* key){ if (key == "rand")new(this) OpMatrix(RefMatrix().dot(RMatrix())); }
 	OpMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
 	OpMatrix(int isym)
 	{

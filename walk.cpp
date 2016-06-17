@@ -324,6 +324,7 @@ void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, MODEL_NAME trans)
 void Walk::simplify()
 // carry out the pivot operations implicit in the walk, so npivot -> 0 
 {
+   SAWaccept += npivot;	
 	OPERATION_NAME*  pOper_ipivot;
 	int ipivot, itime;
 	MODEL_NAME shift_ipivot, pp;
@@ -354,7 +355,7 @@ int Walk::GoOneStep(const int MaxTrial)
 {
 	//const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
 	generation++;
-	int inner = 0, SAWaccept = 0;
+	int inner = 0;
 	int MCtrial = 0;
 	while (MCtrial < MaxTrial) 
 	{
@@ -362,14 +363,14 @@ int Walk::GoOneStep(const int MaxTrial)
 		for (inner = 1; inner <= n_inner; inner++)
 		{
 			Proposal prop(this);
-			int count = pivot_strictly_saw(&prop);
-			//printf("try result %d\n", count);
+			//printf("%d \n",prop.pivot_loc);
+			pivot_strictly_saw(&prop);
 			if (npivot >= nsimplify)
 			{
 				break;
 			}
 		} // end loop on inner then #nsimplify successful pivot is prepared
-		SAWaccept += npivot;
+		
 		double et = GetEnergy();
 		if (AcceptOrNot(et,old_energy))
 		{
@@ -392,7 +393,6 @@ int Walk::GoOneStep(const int MaxTrial)
 	if (false) 
 	{
 		//printf("%d generation, turn=%lf, MC accept ratio=%lf\n",generation, turn_frac(), 100.0 / double(MCtrial));
-		printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), SAWaccept*100.0 / double(inner));
 	}
 	
 	// record the walk 
@@ -400,7 +400,7 @@ int Walk::GoOneStep(const int MaxTrial)
 	return(inner);
 }
 
-Walk::Walk(int tnsteps, char* tinit_walk_fname, int tnsimplify, char* tfinal_walk_fname, int tn_inner, int tno_saw, int tmax_npivot) :
+Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tnsimplify, const char* tfinal_walk_fname, int tn_inner, int tno_saw, int tmax_npivot) :
 n_inner(tn_inner),
 max_npivot(tmax_npivot),
 no_saw(tno_saw),
@@ -410,11 +410,12 @@ nsimplify(tnsimplify),
 final_walk_fname(tfinal_walk_fname),
 data_fname("data"),
 old_energy(-1),
-generation(0)
+generation(0),
+SAWaccept(0)
 {
 	if(nsimplify == 0) nsimplify = int(sqrt(double(nsteps / 40)));
 	if(max_npivot == 0) max_npivot = nsimplify+100;
-	if(n_inner == 0) n_inner = nsimplify*10;
+	if(n_inner == 0) n_inner = nsimplify*100;
 #ifdef linux
 	struct timeval tpstart;
 	gettimeofday(&tpstart, NULL);
@@ -491,7 +492,7 @@ void Walk::run(int MCsteps)
 		if (result == -1) printf("The step %d is failed with 10 trial.\n",i+1);
 		else trial += result;
 	}
-	printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), nsimplify*MCsteps*100.0 / double(trial));
+	printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), SAWaccept*100.0 / double(trial));
 	Record();
 }
 

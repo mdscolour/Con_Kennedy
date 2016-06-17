@@ -1,3 +1,20 @@
+/**************************************************************************
+The main class of the walk. Some importances are listed:
+
+constructor Walk --- initialize everything, paremeters are (total length, initial file name, pivot each step, final file name)
+where "0" for initial file name means a 45 degree straight line
+
+GoOneStep(n) --- go 1 step in MC chain with n trial, return -1 if all failed, return the number of total trial in doing pivoting if successful.
+Note that all pivot will be carried out at the end of this.
+
+run(n) --- go n steps in MC chain, which has 10 trial by default. Will call Record() once at the end.
+
+Record() --- Write down the SAW in file "FinalWalk" by default. Or other data in future.
+
+class proposal ---a proposal contains a pivot location, an operation, the inverse of that opeation.
+Calling by using the constructor "proposal(this)" in the class Walk will initialize everything.
+**************************************************************************/
+
 #pragma once
 #include "global.h"
 #include "point.h"
@@ -7,13 +24,10 @@ class Walk {
 private:
 	MODEL_NAME* steps;
 	const int nsteps; // number of steps in the walk  
-
-	// number of attempted pivots the walk has been through since it was a line 
-	// in multiples of INNER_LOOP
-	// So if INNER_LOOP=1,000,000, this is number in millions
 	int generation;
 	int n_inner;
 	int max_npivot;
+	int SAWaccept;
 	int no_saw;
 	double old_energy;
 	int npivot; // number of accepted pivots not yet applied to walk
@@ -21,14 +35,17 @@ private:
 	OPERATION_NAME* igroup; // array of group elements  
 	MODEL_NAME* shift; // array of shifts
 
-	char *init_walk_fname, *final_walk_fname, *data_fname;
+	const char *init_walk_fname, *final_walk_fname, *data_fname;
 	int nsimplify;
 
+/**********************************************************
+
+***********************************************************/
 	class Proposal
 	{
 	public:
 		int pivot_loc;
-		OPERATION_NAME op;// 0 is not included
+		OPERATION_NAME op;
 		OPERATION_NAME invop;
 
 		Walk* pw;
@@ -39,7 +56,7 @@ public:
 	void run(int MCsteps=1);
 
 	// Central function of initialization
-	Walk(int tnsteps = 1000, char* tinit_walk_fname = "0", int tnsimplify = 3, char* tfinal_walk_fname = "FinalWalk", int tn_inner = 0, int tno_saw = 0, int tmax_npivot = 0);
+	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tnsimplify = 3, const char* tfinal_walk_fname = "FinalWalk", int tn_inner = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
 	int GoOneStep(const int MaxTrial = 10);
