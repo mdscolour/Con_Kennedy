@@ -139,7 +139,16 @@ public:
 class RMatrix : public Matrix
 {
 public:
-	RMatrix(){}
+	RMatrix()
+	{
+		int plane = int(RNG_NAME() * 3);
+		double theta = 2 * M_PI*RNG_NAME();
+		if (plane==0)new(this) Matrix(cos(theta), -sin(theta), 0, sin(theta), cos(theta), 0, 0, 0, 1);
+		else if (plane == 1)new(this) Matrix(cos(theta), 0, -sin(theta), 0, 1, 0, sin(theta), 0, cos(theta));
+		else if (plane == 2)new(this) Matrix(1, 0, 0, 0, cos(theta), -sin(theta), 0, sin(theta), cos(theta));
+		else printf("Error in constructing RMatrix\n");
+	}
+	//RMatrix(){ new(this)RMatrix(int(15 * 100*100*100 * RNG_NAME())); }
 	RMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
 
 	// rotation index 
@@ -184,10 +193,10 @@ public:
 	}
 	RMatrix(int isym)
 	{
-		double theta1 = (isym % RADIANNUM) * 2.0 * M_PI / RADIANNUM; isym /= RADIANNUM;
-		double theta2 = ((isym % RADIANNUM)+1) * 2.0 * M_PI / (RADIANNUM+1); isym /= RADIANNUM;
-		double theta3 = ((isym % RADIANNUM)+1) * 2.0 * M_PI / (RADIANNUM+1); isym /= RADIANNUM;
-		new(this) RMatrix(isym % ROTNUM, theta1, theta2, theta3);
+		double theta1 = (isym % 100) * 2.0 * M_PI / 100; isym /= 100;
+		double theta2 = ((isym % 100)+1) * 2.0 * M_PI / (100+1); isym /= 100;
+		double theta3 = ((isym % 100)+1) * 2.0 * M_PI / (100+1); isym /= 100;
+		new(this) RMatrix(isym, theta1, theta2, theta3);
 	}
 	//RMatrix Rotbyind(long isym, double theta){ return(RMatrix(isym, theta1, theta2)); }
 	Matrix rotxy(double theta){ return Matrix(cos(theta), -sin(theta), 0, sin(theta), cos(theta), 0, 0, 0, 1); }
@@ -199,12 +208,11 @@ public:
 class RefMatrix : public Matrix
 {
 public:
-	RefMatrix(){}
-	RefMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
-	RefMatrix(int isym)
+	RefMatrix()
 	{
-		double x=1, y=1, z=1;
-		switch (isym) 
+		int isym = int(8 * RNG_NAME());
+		double x = 1, y = 1, z = 1;
+		switch (isym)
 		{
 		case 0:                        break;   // +++
 		case 1:                 z = -1;  break;   // ++-
@@ -216,24 +224,43 @@ public:
 		case 7:   x = -1;  y = -1;  z = -1;  break;   // ---
 		default: printf("wrong mirror index, not 0-7 \n"); break;
 		} // end switch on isym_sign
-		new(this) Matrix(x,0,0,0,y,0,0,0,z);
+		new(this) Matrix(x, 0, 0, 0, y, 0, 0, 0, z);
+	}
+	RefMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
+	RefMatrix(int isym)
+	{
+		double x = 1, y = 1, z = 1;
+		switch (isym)
+		{
+		case 0:                        break;   // +++
+		case 1:                 z = -1;  break;   // ++-
+		case 2:          y = -1;         break;   // +-+
+		case 3:          y = -1;  z = -1;  break;   // +--
+		case 4:   x = -1;                break;   // -++
+		case 5:   x = -1;         z = -1;  break;   // -+-
+		case 6:   x = -1;  y = -1;         break;   // --+
+		case 7:   x = -1;  y = -1;  z = -1;  break;   // ---
+		default: printf("wrong mirror index, not 0-7 \n"); break;
+		} // end switch on isym_sign
+		new(this) Matrix(x, 0, 0, 0, y, 0, 0, 0, z);
 	}
 };
 
 // The real used operation matrix, which is nothing but reflection matrix dot rotation matrix.
 // can only be constructed by matrix of a integer, the integer must be 0 to (num_rotation*num_reflection-1)*RADIANNUM*RADIANNUM*RADIANNUM
-class OPERATION_NAME :public Matrix
+class OpMatrix :public Matrix
 {
 public:
-	OPERATION_NAME(){}
-	OPERATION_NAME(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
-	OPERATION_NAME(int isym)
+	OpMatrix(){}
+	OpMatrix(char* key){ if (key == "rand")new(this) OpMatrix(RefMatrix().dot(RMatrix())); }
+	OpMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
+	OpMatrix(int isym)
 	{
 		RMatrix temp(isym);
-		isym /= RADIANNUM;
-		isym /= RADIANNUM;
-		isym /= RADIANNUM;
-		new(this) OPERATION_NAME(RefMatrix(isym / ROTNUM).dot(temp));
+		isym /= 100;
+		isym /= 100;
+		isym /= 100;
+		new(this) OpMatrix(RefMatrix(isym / 15).dot(temp));
 	}
 };
 
@@ -247,7 +274,7 @@ public:
 	Sphere(double a, double b, double c, double d) :GPoint(a, b, c), r(d){}
 	Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
 
-	Sphere get_op(GPoint<double>* ref, OPERATION_NAME* op)
+	Sphere get_op(GPoint<double>* ref, OpMatrix* op)
 	{
 		return(op->dot(*this) + (*ref));
 	}
@@ -255,8 +282,8 @@ public:
 // hide the function of the base
 	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
 	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
-	double WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? t : 0); }
-	void euclidean_op(GPoint<double>* p,GPoint<double>* ref, OPERATION_NAME* op)
+	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
+	void euclidean_op(GPoint<double>* p, GPoint<double>* ref, OpMatrix* op)
 	{
 		(*this) = op->dot(*p) + (*ref);
 	}

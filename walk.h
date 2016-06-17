@@ -32,21 +32,25 @@ private:
 		OPERATION_NAME invop;
 
 		Walk* pw;
-		Proposal(Walk* pw) :pivot_loc(int(floor(pw->GetLength()*RNG_NAME()))), op(int(floor(NUM_SYM * RNG_NAME() + 1))), invop(op.inv()){}
-		void Rand(){ pivot_loc = int(floor(pw->GetLength()*RNG_NAME())); op = OPERATION_NAME(int(floor(NUM_SYM * RNG_NAME() + 1))); invop = op.inv(); }
+		Proposal(Walk* pw) :pivot_loc(int(pw->GetLength()*RNG_NAME())), op("rand"), invop(op.inv()){}
 	};
 public:
+	// Function to go n step 
+	void run(int MCsteps=1);
 
 	// Central function of initialization
 	Walk(int tnsteps = 1000, char* tinit_walk_fname = "0", int tnsimplify = 3, char* tfinal_walk_fname = "FinalWalk", int tn_inner = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
-	void run();
+	int GoOneStep(const int MaxTrial = 10);
 
+	// Add the pivot to the array
 	void add_pivot(int pivot_loc, OPERATION_NAME* isym, MODEL_NAME trans);
 
 	// Carry out the pivots, so npivot -> 0
 	void simplify(); 
+
+	// The core, where Kennedy check is used.
 	int pivot_strictly_saw(Proposal* prop);
 
 	// A parameter to judge thermalization. Here is the fraction of 'number of steps that the angle larger than 120 degree' over 'the length
@@ -70,7 +74,7 @@ public:
 	// Function to judge whether accept the pivots, now is empty
 	bool AcceptOrNot(double newE, double oldE);
 
-	// A step means at the end this function will be called once
+	// Called once at the end of run().
 	void Record();
 
 	// Get the current i step

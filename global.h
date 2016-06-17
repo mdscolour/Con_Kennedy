@@ -28,8 +28,3 @@ inline double GetRand()
 #define MODEL_NAME Sphere
 #define RADIUS 0.4
 #define OPERATION_NAME OpMatrix
-
-#define RADIANNUM 100
-//#define NUM_SYM 47
-#define NUM_SYM 119*RADIANNUM*RADIANNUM*RADIANNUM
-#define ROTNUM 15  // number of the rotation matrix 0-14

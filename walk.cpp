@@ -208,8 +208,8 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 				}
 				// stepsj is w[jp] - w[i]   
 				stepsj.euclidean_op(steps + jp, &shift_jseg, pgroup_jseg);
-				separation = int(stepsj.WellSeparate());
-				//separation = stepsj.WellSeparate();
+				//separation = int(stepsj.WellSeparate());
+				separation = stepsj.WellSeparate();
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -254,8 +254,8 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 					pgroup_iseg = &igroup[iseg];
 				}
 				stepsi.euclidean_op(steps + ip, &shift_iseg, pgroup_iseg);
-				separation = int(stepsi.WellSeparate());
-				//separation = stepsi.WellSeparate();
+				//separation = int(stepsi.WellSeparate());
+				separation = stepsi.WellSeparate();
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -350,24 +350,26 @@ void Walk::simplify()
 	clean_pivot();
 } // end walk::simplify()
 
-void Walk::run()
+int Walk::GoOneStep(const int MaxTrial)
 {
+	//const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
 	generation++;
+	int inner = 0, SAWaccept = 0;
 	int MCtrial = 0;
-	const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
 	while (MCtrial < MaxTrial) 
 	{
 		MCtrial++;
-		for (int inner = 1; inner <= n_inner; inner++)
+		for (inner = 1; inner <= n_inner; inner++)
 		{
 			Proposal prop(this);
-			pivot_strictly_saw(&prop);
+			int count = pivot_strictly_saw(&prop);
+			//printf("try result %d\n", count);
 			if (npivot >= nsimplify)
 			{
 				break;
 			}
 		} // end loop on inner then #nsimplify successful pivot is prepared
-
+		SAWaccept += npivot;
 		double et = GetEnergy();
 		if (AcceptOrNot(et,old_energy))
 		{
@@ -379,20 +381,23 @@ void Walk::run()
 		else
 		{
 			//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
-			if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
+			//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
 			clean_pivot();
+			if (MCtrial == MaxTrial) return(-1);
 		}		
 	}
+	if (npivot != 0)printf("Error. Npivot is not zero at the end.\n");
 
 	// print the accept ratio and turn fraction
-	if (true) 
+	if (false) 
 	{
-		printf("%d generation, turn=%lf, MC accept ratio=%lf\n",
-			generation, turn_frac(), 100.0 / double(MCtrial));
+		//printf("%d generation, turn=%lf, MC accept ratio=%lf\n",generation, turn_frac(), 100.0 / double(MCtrial));
+		printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), SAWaccept*100.0 / double(inner));
 	}
 	
 	// record the walk 
-	Record(); 
+	//Record(); 
+	return(inner);
 }
 
 Walk::Walk(int tnsteps, char* tinit_walk_fname, int tnsimplify, char* tfinal_walk_fname, int tn_inner, int tno_saw, int tmax_npivot) :
@@ -474,6 +479,20 @@ void Walk::Record()
 	fptr = fopen(final_walk_fname, "w");
 	this->print(fptr);
 	fclose(fptr);
+}
+
+void Walk::run(int MCsteps)
+{
+	int trial = 0;
+	int result = 0;
+	for (int i = 0; i < MCsteps; i++)
+	{
+		result = GoOneStep(10);
+		if (result == -1) printf("The step %d is failed with 10 trial.\n",i+1);
+		else trial += result;
+	}
+	printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), nsimplify*MCsteps*100.0 / double(trial));
+	Record();
 }
 
 //////////////////////////////////////////////////////////////////////////
