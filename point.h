@@ -315,3 +315,21 @@ public:
 		(*this) = op->dot(*p) + (*ref);
 	}
 };
+
+class Rigid_Sphere :public Sphere
+{
+public:
+	double k;
+	Rigid_Sphere() :k(RIGID){}
+	Rigid_Sphere(const GPoint& p) :Sphere(p.x, p.y, p.z),k(RIGID){}
+        Rigid_Sphere(const Sphere& p) :Sphere(p.x, p.y, p.z),k(RIGID){}
+
+// hide the function of the base
+	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf %lf \n", x, y, z, r, k); }
+	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf %lf \n", &x, &y, &z, &r, &k); }
+	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
+	void euclidean_op(GPoint<double>* p, GPoint<double>* ref, OpMatrix* op)
+	{
+		(*this) = op->dot(*p) + (*ref);
+	}
+};

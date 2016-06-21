@@ -30,8 +30,8 @@ int main(int argc,char *argv[])
    if(argc>=4) pivot_per_step=atoi(argv[3]);
 	if(argc>=5) stepnum=atoi(argv[4]);
    
-	Walk w(length, init_name, pivot_per_step);
-	w.run(stepnum);
+// 	Walk w(length, init_name, pivot_per_step);
+// 	w.run(stepnum);
 
 #ifdef _WIN32
 	printf("\n");

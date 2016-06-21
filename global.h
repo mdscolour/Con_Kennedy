@@ -30,6 +30,8 @@ inline double GetRand()
 #endif
 
 // Other parameters
-#define MODEL_NAME Sphere
+//#define MODEL_NAME Sphere
 #define RADIUS 0.4
+#define MODEL_NAME Rigid_Sphere
+#define RIGID 100
 #define OPERATION_NAME OpMatrix

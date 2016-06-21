@@ -502,7 +502,7 @@ void Walk::run(int MCsteps)
 
 double Walk::GetEnergy()
 {
-	return -1; // now is a empty function
+/*	return -1; // now is a empty function
 	double r = 99;
 	double etemp = 0;
 	for (int i = 0; i <= nsteps; i++)
@@ -518,12 +518,21 @@ double Walk::GetEnergy()
 			if (r < 1) etemp += -1;
 		}
 	}
-	return etemp;
+	return etemp;*/
+
+        MODEL_NAME left,right;
+        double etemp = 0;
+	for (int i = 1; i < nsteps; i++)
+	{
+            etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
+	}
+        return etemp;
 }
 
 bool Walk::AcceptOrNot(double newE, double oldE)
 {
-	return true;
-	//return(newE < oldE);
+	//return true;
+	return(newE < oldE);
 	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
+        //return(RNG_NAME() <= exp(oldE-newE));
 }
