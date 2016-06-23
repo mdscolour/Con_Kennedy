@@ -152,9 +152,9 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	origin.zero();
 	iseg = find_segment(pivot_loc, npivot, ptime);
 	stepsp.euclidean_op(steps + pivot_loc, shift + iseg, &igroup[iseg]);
-	transi.euclidean_op(&stepsp, &origin, poper);
+	transi= stepsp.rotation(poper);
 	transi = stepsp - transi;
-	transj.euclidean_op(&stepsp, &origin, pinvoper);
+	transj= stepsp.rotation(pinvoper);
 	transj = stepsp - transj;
 	count = 0;
 
@@ -288,7 +288,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, MODEL_NAME trans)
 {
 	int iseg, ipivot;
-	MODEL_NAME pp;
+	GPoint<double> pp;
 
 	if (npivot>max_npivot - 1)
 	{
@@ -316,7 +316,7 @@ void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, MODEL_NAME trans)
 	for (ipivot = iseg; ipivot <= npivot; ipivot++)
 	{
 		pp = shift[ipivot];
-		shift[ipivot].euclidean_op(&pp, &trans, poper);
+		shift[ipivot] = pp.rotation(poper)+trans;
 		igroup[ipivot] = poper->dot(igroup[ipivot]);
 	} // end loop on ipivot
 

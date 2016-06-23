@@ -29,6 +29,7 @@ Override or hide the above two function if a new model is made. (no vitural func
 #include "global.h"
 
 class Sphere;
+class OpMatrix;
 // Template class of of point, all ordinary operation of 3x3 point is available
 template <class T> 
 class GPoint
@@ -38,6 +39,7 @@ public:
 	//everything just inline
 	GPoint(){}
 	GPoint(T a, T b, T c) :x(a), y(b), z(c){}
+	GPoint(const Sphere& p) :x(p.x), y(p.y), z(p.z){printf("aaa done once\n")}
 	GPoint(const GPoint& p) :x(p.x), y(p.y), z(p.z){}
 	/////~point(){ cout << "deconstructed" << endl; }
 
@@ -62,9 +64,9 @@ public:
 	//void assign(T xx, T yy, T zz) { x = xx; y = yy; z = zz; }
 
 	T distance(){return(T(sqrt(x*x + y*y + z*z)));}
+	inline GPoint rotation(OpMatrix* op);
 };
 
-class OpMatrix;
 // The real model which is a hard sphere
 class Sphere
 {
@@ -248,9 +250,14 @@ public:
 template <class T> 
 inline T GPoint<T>::dot(Sphere p){ return(x*p.x+y*p.y+z*p.z); }
 
+template <class T> 
+inline GPoint<T> GPoint<T>::rotation(OpMatrix* op)
+{
+	return(op->dot(*this));
+}
+
 inline void Sphere::euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op)
 {
 	(*this) = op->dot(*p) + (*ref);
 }
-
 
