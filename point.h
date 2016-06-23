@@ -28,6 +28,7 @@ Override or hide the above two function if a new model is made. (no vitural func
 #pragma once
 #include "global.h"
 
+class Sphere;
 // Template class of of point, all ordinary operation of 3x3 point is available
 template <class T> 
 class GPoint
@@ -56,82 +57,33 @@ public:
 	bool operator==(GPoint p){ return((abs(p.x - x)<1e-8 && abs(p.y - y)<1e-8 && abs(p.z - z)<1e-8)); }
 	bool close(GPoint p, double preci = 1.e-5){ return((abs(p.x - x)<preci && abs(p.y - y)<preci && abs(p.z - z)<preci)); }
 	T dot(GPoint p){ return(x*p.x+y*p.y+z*p.z); }
+	inline T dot(Sphere p);
 	void zero()	{x = 0;y = 0;z = 0;}
-	void assign(T xx, T yy, T zz) { x = xx; y = yy; z = zz; }
+	//void assign(T xx, T yy, T zz) { x = xx; y = yy; z = zz; }
 
 	T distance(){return(T(sqrt(x*x + y*y + z*z)));}
-	GPoint& mirror(int isym) // isym 0-7
-	{
-		switch (isym) {
-		case 0:                        break;   // +++
-		case 1:                 z = -z;  break;   // ++-
-		case 2:          y = -y;         break;   // +-+
-		case 3:          y = -y;  z = -z;  break;   // +--
-		case 4:   x = -x;                break;   // -++
-		case 5:   x = -x;         z = -z;  break;   // -+-
-		case 6:   x = -x;  y = -y;         break;   // --+
-		case 7:   x = -x;  y = -y;  z = -z;  break;   // ---
-		default: printf("wrong mirror index, not 0-7 \n"); break;
-		} // end switch on isym_sign
-		return (*this);
-	}
-
-// Pointed out by Andreas, it doesn't need virtual function here, and I found here not even need template,
-// just hide the following function in the children is enough.
-// So the following function is better being hidden in the child. And a global macro is used to switch the function.
-	T WellSeparate(){ T t = abs(x) + abs(y) + abs(z); return((t>1.e-5) ? t : 0); }
-	void print(FILE *fptr){ fprintf(fptr, "%f %f %f\n", x, y, z); }
-	void scan(FILE *fptr){ fscanf(fptr, "%f %f %f\n", &x, &y, &z); }
-	void euclidean_op(GPoint* q, GPoint* p, int isym)
-	{
-		switch (isym % 6) {
-		case 0:   x = (*q).x;     y = (*q).y;     z = (*q).z;  break;   // identity
-		case 1:   x = (*q).y;     y = (*q).x;     z = (*q).z;  break;   // (xy)
-		case 2:   x = (*q).x;     y = (*q).z;     z = (*q).y;  break;   // (yz)
-		case 3:   x = (*q).z;     y = (*q).y;     z = (*q).x;  break;   // (xz)
-		case 4:   x = (*q).z;     y = (*q).x;     z = (*q).y;  break;   // (xyz)
-		case 5:   x = (*q).y;     y = (*q).z;     z = (*q).x;  break;   // (xzy) 
-		default:
-			printf("bad case cubic isym_perm in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_perm
-		switch (isym / 6) {
-		case 0:                        break;   // +++
-		case 1:                 z = -z;  break;   // ++-
-		case 2:          y = -y;         break;   // +-+
-		case 3:          y = -y;  z = -z;  break;   // +--
-		case 4:   x = -x;                break;   // -++
-		case 5:   x = -x;         z = -z;  break;   // -+-
-		case 6:   x = -x;  y = -y;         break;   // --+
-		case 7:   x = -x;  y = -y;  z = -z;  break;   // ---
-		default:
-			printf("bad case cubic isym_sign in euclidean_op \n");
-			exit(0);
-			break;
-		} // end switch on isym_sign
-		x += (*p).x;
-		y += (*p).y;
-		z += (*p).z;
-	} // end point::euclidean_op()
 };
 
-// class fPoint :public GPoint<float>
-// {
-// public:
-// 	fPoint(){}
-// 	fPoint(float a, float b, float c) :GPoint(a, b, c){}
-// 	fPoint(const GPoint& p):GPoint(p.x,p.y,p.z){}
-// 	virtual void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf\n", x, y, z); }
-// };
-// class iPoint :public GPoint<int>
-// {
-// public:
-// 	iPoint(){}
-// 	iPoint(int a, int b, int c) :GPoint(a, b, c){}
-// 	iPoint(const GPoint& p) :GPoint(p.x, p.y, p.z){}
-// 	virtual void print(FILE *fptr){ fprintf(fptr, "%d %d %d\n", x, y, z); }
-// };
+class OpMatrix;
+// The real model which is a hard sphere
+class Sphere
+{
+public:
+	double x,y,z,r;
+	Sphere(){}
+	//Sphere(double a, double b, double c) :GPoint(a, b, c), r(RADIUS){}
+	Sphere(double a, double b, double c, double d) :x(a),y(b),z(c),r(d){}
+	//Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
+
+	Sphere operator+(GPoint<double> p){ return Sphere(x + p.x, y + p.y, z + p.z, r); }
+	Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r); }
+	
+	void assign(double xx, double yy, double zz, double rr) { x = xx; y = yy; z = zz; r = rr; }
+	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
+	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
+	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
+	inline void euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op);
+};
 
 // 3x3 matrix
 class Matrix
@@ -154,9 +106,11 @@ public:
 	bool close(Matrix m, double preci = 0.01){ return((row1.close(m.row1, preci) && row2.close(m.row2, preci) && row3.close(m.row3, preci))); }
 	Matrix inv();
 
-	void print(FILE *fptr){ row1.print(fptr); row2.print(fptr); row3.print(fptr); }
+	//void print(FILE *fptr){ row1.print(fptr); row2.print(fptr); row3.print(fptr); }
 	Matrix& identity(){ row1 = GPoint<double>(1, 0, 0); row2 = GPoint<double>(0, 1, 0); row3 = GPoint<double>(0, 0, 1); return(*this); }
-	GPoint<double> dot(GPoint<double> v){ return GPoint<double>(row1.dot(v), row2.dot(v), row3.dot(v)); }
+	
+	GPoint<double> dot(GPoint<double> v){ return GPoint<double>(row1.dot(v), row2.dot(v), row3.dot(v)); }	
+	Sphere dot(Sphere v){ return Sphere(row1.dot(v), row2.dot(v), row3.dot(v),v.r); }
 	Matrix dot(Matrix x){ return Matrix(row1.dot(x.col1()), row1.dot(x.col2()), row1.dot(x.col3()), row2.dot(x.col1()), row2.dot(x.col2()), row2.dot(x.col3()), row3.dot(x.col1()), row3.dot(x.col2()), row3.dot(x.col3())); }
 	//Sphere dot(Sphere v){return GPoint<double>(row1.dot(v),row2.dot(v),row3.dot(v));}
 
@@ -291,45 +245,12 @@ public:
 	}
 };
 
-// The real model which is a hard sphere
-class Sphere :public GPoint<double>
+template <class T> 
+inline T GPoint<T>::dot(Sphere p){ return(x*p.x+y*p.y+z*p.z); }
+
+inline void Sphere::euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op)
 {
-public:
-	double r;
-	Sphere() :r(RADIUS){}
-	Sphere(double a, double b, double c) :GPoint(a, b, c), r(RADIUS){}
-	Sphere(double a, double b, double c, double d) :GPoint(a, b, c), r(d){}
-	Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
+	(*this) = op->dot(*p) + (*ref);
+}
 
-	Sphere get_op(GPoint<double>* ref, OpMatrix* op)
-	{
-		return(op->dot(*this) + (*ref));
-	}
 
-// hide the function of the base
-	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
-	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
-	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
-	void euclidean_op(GPoint<double>* p, GPoint<double>* ref, OpMatrix* op)
-	{
-		(*this) = op->dot(*p) + (*ref);
-	}
-};
-
-class Rigid_Sphere :public Sphere
-{
-public:
-	double k;
-	Rigid_Sphere() :k(RIGID){}
-	Rigid_Sphere(const GPoint& p) :Sphere(p.x, p.y, p.z),k(RIGID){}
-        Rigid_Sphere(const Sphere& p) :Sphere(p.x, p.y, p.z),k(RIGID){}
-
-// hide the function of the base
-	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf %lf \n", x, y, z, r, k); }
-	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf %lf \n", &x, &y, &z, &r, &k); }
-	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
-	void euclidean_op(GPoint<double>* p, GPoint<double>* ref, OpMatrix* op)
-	{
-		(*this) = op->dot(*p) + (*ref);
-	}
-};

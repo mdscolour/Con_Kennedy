@@ -54,7 +54,7 @@ void Walk::line_initialize(int direction)
 	i1 = 0; i2 = 0; i3 = 0;
 	for (i = 0; i <= nsteps; i++)
 	{
-		steps[i].assign(i1, i2, i3);
+		steps[i].assign(i1, i2, i3, RADIUS);
 		switch (direction) {
 		case 1: i1++; break;
 		case 2: if (i % 2 == 0) i2++; else i1++; break;
@@ -138,7 +138,8 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	OPERATION_NAME *pgroup_jseg, *pgroup_iseg;
 	int i, j, ip, jp, iseg, jseg, imin, imax, jmin, jmax;
 	int separation, min_separation, sep_mod;
-	MODEL_NAME origin, transi, transj, pp, stepsp, stepsi, stepsj, shift_jseg, shift_iseg;
+	MODEL_NAME  pp, stepsp, stepsi, stepsj;
+	GPoint<double> origin, transi, transj, shift_jseg, shift_iseg;
 	int count, changei_flag;
 	int pivot_loc = prop->pivot_loc;
 	OPERATION_NAME* poper = &(prop->op);
@@ -430,7 +431,7 @@ SAWaccept(0)
 
 	ptime = new int[max_npivot + 2];// this may be one larger than needed 
 	igroup = new OPERATION_NAME[max_npivot + 1];
-	shift = new MODEL_NAME[max_npivot + 1];
+	shift = new GPoint<double>[max_npivot + 1];
 
 	////////////////////////////////////////////////////////////
 	//  initialize walk to a line or  read walk from file     //

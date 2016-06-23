@@ -33,7 +33,7 @@ private:
 	int npivot; // number of accepted pivots not yet applied to walk
 	int* ptime; // array of pivot times 
 	OPERATION_NAME* igroup; // array of group elements  
-	MODEL_NAME* shift; // array of shifts
+	GPoint<double>* shift; // array of shifts
 
 	const char *init_walk_fname, *final_walk_fname, *data_fname;
 	int nsimplify;
