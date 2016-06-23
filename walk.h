@@ -22,7 +22,7 @@ Calling by using the constructor "proposal(this)" in the class Walk will initial
 class Walk {
 	// stores a single walk
 private:
-	MODEL_NAME* steps;
+	Sphere* steps;
 	const int nsteps; // number of steps in the walk  
 	int generation;
 	int n_inner;
@@ -62,7 +62,7 @@ public:
 	int GoOneStep(const int MaxTrial = 10);
 
 	// Add the pivot to the array
-	void add_pivot(int pivot_loc, OPERATION_NAME* isym, MODEL_NAME trans);
+	void add_pivot(int pivot_loc, OPERATION_NAME* isym, GPoint<double> trans);
 
 	// Carry out the pivots, so npivot -> 0
 	void simplify(); 
@@ -95,7 +95,7 @@ public:
 	void Record();
 
 	// Get the current i step
-	MODEL_NAME GetStepi(int i);
+	Sphere GetStepi(int i);
 
 	int GetLength(){ return(nsteps); }
 	int GetPivotNum(){ return(npivot); }

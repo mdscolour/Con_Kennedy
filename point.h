@@ -39,9 +39,9 @@ public:
 	//everything just inline
 	GPoint(){}
 	GPoint(T a, T b, T c) :x(a), y(b), z(c){}
-	GPoint(const Sphere& p) :x(p.x), y(p.y), z(p.z){printf("aaa done once\n")}
-	GPoint(const GPoint& p) :x(p.x), y(p.y), z(p.z){}
-	/////~point(){ cout << "deconstructed" << endl; }
+	//GPoint(const Sphere& p) :x(p.x), y(p.y), z(p.z){printf("aaa done once\n");}
+	//GPoint(const GPoint& p) :x(p.x), y(p.y), z(p.z){}
+	GPoint& operator=(const GPoint& p){ x = p.x; y = p.y; z = p.z; return(*this); }
 
 	T coord_x(){ return(x); }
 	T coord_y(){ return(y); }
@@ -55,15 +55,16 @@ public:
 	GPoint& operator*=(T c){ x *= c; y *= c; z *= c; return *this; }
 	GPoint& operator/=(T c){ x /= c; y /= c; z /= c; return *this; }
 
-	GPoint& operator=(const GPoint& p){ x = p.x; y = p.y; z = p.z; return(*this); }
 	bool operator==(GPoint p){ return((abs(p.x - x)<1e-8 && abs(p.y - y)<1e-8 && abs(p.z - z)<1e-8)); }
 	bool close(GPoint p, double preci = 1.e-5){ return((abs(p.x - x)<preci && abs(p.y - y)<preci && abs(p.z - z)<preci)); }
+
 	T dot(GPoint p){ return(x*p.x+y*p.y+z*p.z); }
 	inline T dot(Sphere p);
+	
 	void zero()	{x = 0;y = 0;z = 0;}
 	//void assign(T xx, T yy, T zz) { x = xx; y = yy; z = zz; }
 
-	T distance(){return(T(sqrt(x*x + y*y + z*z)));}
+	T norm(){return(T(sqrt(x*x + y*y + z*z)));}
 	inline GPoint rotation(OpMatrix* op);
 };
 
@@ -71,19 +72,20 @@ public:
 class Sphere
 {
 public:
-	double x,y,z,r;
+	double x,y,z,r,k;
 	Sphere(){}
-	//Sphere(double a, double b, double c) :GPoint(a, b, c), r(RADIUS){}
-	Sphere(double a, double b, double c, double d) :x(a),y(b),z(c),r(d){}
+	Sphere(double a, double b, double c, double d, double e) :x(a),y(b),z(c),r(d),k(e){}
 	//Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
 
-	Sphere operator+(GPoint<double> p){ return Sphere(x + p.x, y + p.y, z + p.z, r); }
-	Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r); }
+	Sphere operator+(GPoint<double> p){ return Sphere(x + p.x, y + p.y, z + p.z, r, k); }
+	//Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r); }
+	GPoint<double> operator-(Sphere p){ return GPoint<double>(x - p.x, y - p.y, z - p.z); }
 	
-	void assign(double xx, double yy, double zz, double rr) { x = xx; y = yy; z = zz; r = rr; }
-	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf \n", x, y, z, r); }
-	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf \n", &x, &y, &z, &r); }
-	int WellSeparate(){ double t = sqrt(x*x + y*y + z*z); return((t > 2*r) ? int(t+(1-2*r)) : 0); }
+	void assign(double xx, double yy, double zz, double rr,double kk) { x = xx; y = yy; z = zz; r = rr; k = kk; }
+	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf %lf \n", x, y, z, r, k); }
+	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf %lf \n", &x, &y, &z, &r, &k); }
+	int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t > s.r+this->r) ? int(t+(1-s.r+this->r)) : 0); }
+	double distance(const Sphere& s){return(sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)));}
 	inline void euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op);
 };
 
@@ -112,7 +114,7 @@ public:
 	Matrix& identity(){ row1 = GPoint<double>(1, 0, 0); row2 = GPoint<double>(0, 1, 0); row3 = GPoint<double>(0, 0, 1); return(*this); }
 	
 	GPoint<double> dot(GPoint<double> v){ return GPoint<double>(row1.dot(v), row2.dot(v), row3.dot(v)); }	
-	Sphere dot(Sphere v){ return Sphere(row1.dot(v), row2.dot(v), row3.dot(v),v.r); }
+	Sphere dot(Sphere v){ return Sphere(row1.dot(v), row2.dot(v), row3.dot(v), v.r, v.k); }
 	Matrix dot(Matrix x){ return Matrix(row1.dot(x.col1()), row1.dot(x.col2()), row1.dot(x.col3()), row2.dot(x.col1()), row2.dot(x.col2()), row2.dot(x.col3()), row3.dot(x.col1()), row3.dot(x.col2()), row3.dot(x.col3())); }
 	//Sphere dot(Sphere v){return GPoint<double>(row1.dot(v),row2.dot(v),row3.dot(v));}
 

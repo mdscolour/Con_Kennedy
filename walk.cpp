@@ -22,11 +22,11 @@ inline int Walk::find_segment(int itime, int npivot, int* ptime)
 	return(isegl);
 } // find_segment()
 
-MODEL_NAME Walk::GetStepi(int i)
+Sphere Walk::GetStepi(int i)
 // This routine computes the ith point on the walk from the complicated 
 // data structure. Often we duplicate this code for speed rather than call this
 {
-	MODEL_NAME temp;
+	Sphere temp;
 	int iseg;
 	iseg = find_segment(i, npivot, ptime);
 	temp.euclidean_op(steps + i, shift + iseg, &igroup[iseg]);
@@ -54,7 +54,8 @@ void Walk::line_initialize(int direction)
 	i1 = 0; i2 = 0; i3 = 0;
 	for (i = 0; i <= nsteps; i++)
 	{
-		steps[i].assign(i1, i2, i3, RADIUS);
+		steps[i].assign(i1, i2, i3, RADIUS, 100);
+		if(i == 5) steps[i].assign(i1, i2, i3, 0.2, 20);
 		switch (direction) {
 		case 1: i1++; break;
 		case 2: if (i % 2 == 0) i2++; else i1++; break;
@@ -138,7 +139,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	OPERATION_NAME *pgroup_jseg, *pgroup_iseg;
 	int i, j, ip, jp, iseg, jseg, imin, imax, jmin, jmax;
 	int separation, min_separation, sep_mod;
-	MODEL_NAME  pp, stepsp, stepsi, stepsj;
+	Sphere  pp, stepsp, stepsi, stepsj;
 	GPoint<double> origin, transi, transj, shift_jseg, shift_iseg;
 	int count, changei_flag;
 	int pivot_loc = prop->pivot_loc;
@@ -152,10 +153,14 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	origin.zero();
 	iseg = find_segment(pivot_loc, npivot, ptime);
 	stepsp.euclidean_op(steps + pivot_loc, shift + iseg, &igroup[iseg]);
-	transi= stepsp.rotation(poper);
-	transi = stepsp - transi;
-	transj= stepsp.rotation(pinvoper);
-	transj = stepsp - transj;
+	transi= GPoint<double>(stepsp.x,stepsp.y,stepsp.z).rotation(poper);
+	transi.x = stepsp.x - transi.x;
+	transi.y = stepsp.y - transi.y;
+	transi.z = stepsp.z - transi.z;
+	transj= GPoint<double>(stepsp.x,stepsp.y,stepsp.z).rotation(pinvoper);
+	transj.x = stepsp.x - transj.x;
+	transj.y = stepsp.y - transj.y;
+	transj.z = stepsp.z - transj.z;
 	count = 0;
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -196,7 +201,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 			pp.euclidean_op(&stepsi, &transi, poper);
 			min_separation = nsteps;
 			jseg = npivot;   // can change to jseg=iseg; ?
-			shift_jseg = shift[jseg] - pp;
+			shift_jseg = shift[jseg];
 			pgroup_jseg = &igroup[jseg];
 			for (jp = jmax; jp>j;) // note that j is decreased
 			{
@@ -204,13 +209,12 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 				{
 					//jseg = find_segment(jp, npivot, ptime);
 					while (ptime[jseg]>jp) jseg--;
-					shift_jseg = shift[jseg] - pp;
+					shift_jseg = shift[jseg];
 					pgroup_jseg = &igroup[jseg];
 				}
 				// stepsj is w[jp] - w[i]   
 				stepsj.euclidean_op(steps + jp, &shift_jseg, pgroup_jseg);
-				//separation = int(stepsj.WellSeparate());
-				separation = stepsj.WellSeparate();
+				separation = stepsj.WellSeparate(pp);
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -243,7 +247,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 			pp.euclidean_op(&stepsj, &transj, pinvoper);
 			min_separation = nsteps;
 			iseg = 0;
-			shift_iseg = shift[iseg] - pp;
+			shift_iseg = shift[iseg];
 			pgroup_iseg = &igroup[iseg];
 			for (ip = imin; ip<i;) // note that i is increased
 			{
@@ -251,12 +255,12 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 				{
 					//iseg = find_segment(ip, npivot, ptime);
 					while (ptime[iseg + 1] <= ip) iseg++;
-					shift_iseg = shift[iseg] - pp;
+					shift_iseg = shift[iseg];
 					pgroup_iseg = &igroup[iseg];
 				}
 				stepsi.euclidean_op(steps + ip, &shift_iseg, pgroup_iseg);
 				//separation = int(stepsi.WellSeparate());
-				separation = stepsi.WellSeparate();
+				separation = stepsi.WellSeparate(pp);
 				count++;
 				if (separation == 0) return(-count);
 				if (separation >= min_separation)
@@ -285,7 +289,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 
 } // end pivot_strictly_saw()
 
-void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, MODEL_NAME trans)
+void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
 {
 	int iseg, ipivot;
 	GPoint<double> pp;
@@ -328,7 +332,8 @@ void Walk::simplify()
    SAWaccept += npivot;	
 	OPERATION_NAME*  pOper_ipivot;
 	int ipivot, itime;
-	MODEL_NAME shift_ipivot, pp;
+	Sphere pp;
+	GPoint<double> shift_ipivot;
 
 	// even on the 0th segment there may be something to do 
 	for (ipivot = 0; ipivot<npivot; ipivot++)
@@ -375,7 +380,7 @@ int Walk::GoOneStep(const int MaxTrial)
 		double et = GetEnergy();
 		if (AcceptOrNot(et,old_energy))
 		{
-			//printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
+			printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
 			old_energy = et;
 			simplify();
 			break;
@@ -427,7 +432,7 @@ SAWaccept(0)
 	srand(unsigned int(time(NULL)));
 #endif
 
-	steps = new MODEL_NAME[nsteps + 1];
+	steps = new Sphere[nsteps + 1];
 
 	ptime = new int[max_npivot + 2];// this may be one larger than needed 
 	igroup = new OPERATION_NAME[max_npivot + 1];
@@ -465,7 +470,7 @@ double Walk::turn_frac()
 	long i, count;
 	count = 0;
 	for (i = 1; i<nsteps; i++)
-	if (fabs((steps[i - 1] - steps[i + 1]).distance() - 2.) > 0.267) count++;
+	if (fabs(steps[i - 1].distance(steps[i + 1]) - 2.) > 0.267) count++;
 	return(double(count) / double(nsteps - 1));
 } // end turn_frac
 
@@ -521,19 +526,19 @@ double Walk::GetEnergy()
 	}
 	return etemp;*/
 
-        MODEL_NAME left,right;
-        double etemp = 0;
+	double etemp = 0;
 	for (int i = 1; i < nsteps; i++)
 	{
-            etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
+        etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
+		//printf("%lf\n",((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i))));
 	}
-        return etemp;
+    return etemp;
 }
 
 bool Walk::AcceptOrNot(double newE, double oldE)
 {
 	//return true;
-	return(newE < oldE);
+	//return(newE < oldE);
 	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
-        //return(RNG_NAME() <= exp(oldE-newE));
+    return(RNG_NAME() <= exp(oldE-newE));
 }
