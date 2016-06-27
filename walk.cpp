@@ -54,8 +54,8 @@ void Walk::line_initialize(int direction)
 	i1 = 0; i2 = 0; i3 = 0;
 	for (i = 0; i <= nsteps; i++)
 	{
-		steps[i].assign(i1, i2, i3, RADIUS, 100);
-		if(i == 5) steps[i].assign(i1, i2, i3, 0.2, 20);
+		steps[i].assign(i1, i2, i3, RADIUS, RIGID);
+		//if(i == 5) steps[i].assign(i1, i2, i3, 0.2, 20);
 		switch (direction) {
 		case 1: i1++; break;
 		case 2: if (i % 2 == 0) i2++; else i1++; break;
@@ -283,10 +283,20 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	} // end while 
 
 	// If we reach this point the walk is self-avoiding. 
-	// The pivot operations were not done to the walk. So we must do them.
-	add_pivot(pivot_loc, poper, transi);
-	return(count);
-
+	double new_energy = GetEnergy();
+	if (AcceptOrNot(new_energy,old_energy))
+	{
+		//printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
+		old_energy = new_energy;
+		add_pivot(pivot_loc, poper, transi);
+		return(count);
+	}
+	else
+	{
+		//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
+		//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
+		return(-count);
+	}	
 } // end pivot_strictly_saw()
 
 void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
@@ -328,8 +338,7 @@ void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
 
 void Walk::simplify()
 // carry out the pivot operations implicit in the walk, so npivot -> 0 
-{
-   SAWaccept += npivot;	
+{	
 	OPERATION_NAME*  pOper_ipivot;
 	int ipivot, itime;
 	Sphere pp;
@@ -357,42 +366,23 @@ void Walk::simplify()
 	clean_pivot();
 } // end walk::simplify()
 
-int Walk::GoOneStep(const int MaxTrial)
+void Walk::GoOneStep()
 {
 	//const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
 	generation++;
-	int inner = 0;
-	int MCtrial = 0;
-	while (MCtrial < MaxTrial) 
+	int inner = 0, accept_flag=0;
+	for (inner = 1; inner <= n_inner; inner++)
 	{
-		MCtrial++;
-		for (inner = 1; inner <= n_inner; inner++)
+		Proposal prop(this);
+		//printf("%d \n",prop.pivot_loc);
+		accept_flag = pivot_strictly_saw(&prop);
+	    if (accept_flag >= 0) SAWaccept++;
+		if (npivot >= nsimplify)
 		{
-			Proposal prop(this);
-			//printf("%d \n",prop.pivot_loc);
-			pivot_strictly_saw(&prop);
-			if (npivot >= nsimplify)
-			{
-				break;
-			}
-		} // end loop on inner then #nsimplify successful pivot is prepared
-		
-		double et = GetEnergy();
-		if (AcceptOrNot(et,old_energy))
-		{
-			printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
-			old_energy = et;
 			simplify();
-			break;
 		}
-		else
-		{
-			//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
-			//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
-			clean_pivot();
-			if (MCtrial == MaxTrial) return(-1);
-		}		
-	}
+	} // end loop on inner then #nsimplify successful pivot is prepared	
+	simplify();
 	if (npivot != 0)printf("Error. Npivot is not zero at the end.\n");
 
 	// print the accept ratio and turn fraction
@@ -403,10 +393,9 @@ int Walk::GoOneStep(const int MaxTrial)
 	
 	// record the walk 
 	//Record(); 
-	return(inner);
 }
 
-Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tnsimplify, const char* tfinal_walk_fname, int tn_inner, int tno_saw, int tmax_npivot) :
+Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tn_inner, const char* tfinal_walk_fname, int tnsimplify, int tno_saw, int tmax_npivot):
 n_inner(tn_inner),
 max_npivot(tmax_npivot),
 no_saw(tno_saw),
@@ -421,7 +410,6 @@ SAWaccept(0)
 {
 	if(nsimplify == 0) nsimplify = int(sqrt(double(nsteps / 40)));
 	if(max_npivot == 0) max_npivot = nsimplify+100;
-	if(n_inner == 0) n_inner = nsimplify*100;
 #ifdef linux
 	struct timeval tpstart;
 	gettimeofday(&tpstart, NULL);
@@ -488,18 +476,16 @@ void Walk::Record()
 	fclose(fptr);
 }
 
-void Walk::run(int MCsteps)
+void Walk::run(int outer_steps)
 {
-	int trial = 0;
-	int result = 0;
-	for (int i = 0; i < MCsteps; i++)
+	for (int i = 0; i < outer_steps; i++)
 	{
-		result = GoOneStep(10);
-		if (result == -1) printf("The step %d is failed with 10 trial.\n",i+1);
-		else trial += result;
+		GoOneStep();
 	}
-	printf("%d generation, turn=%lf, pivot accept ratio=%lf\n", generation, turn_frac(), SAWaccept*100.0 / double(trial));
-	Record();
+	printf("%d generation, %d * %d trial, turn=%lf, accept ratio=%lf\n", generation, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner));
+	//printf("%d\n",SAWaccept);
+	if(npivot==0) Record();
+	else printf("error, npivot at the end of outer run.\n");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -508,8 +494,7 @@ void Walk::run(int MCsteps)
 
 double Walk::GetEnergy()
 {
-/*	return -1; // now is a empty function
-	double r = 99;
+/*	double r = 99;
 	double etemp = 0;
 	for (int i = 0; i <= nsteps; i++)
 	{
@@ -526,19 +511,20 @@ double Walk::GetEnergy()
 	}
 	return etemp;*/
 
-	double etemp = 0;
-	for (int i = 1; i < nsteps; i++)
-	{
-        etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
-		//printf("%lf\n",((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i))));
-	}
-    return etemp;
+	return -1; // now is a empty function
+// 	double etemp = 0;
+// 	for (int i = 1; i < nsteps; i++)
+// 	{
+//         etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
+// 		//printf("%lf\n",((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i))));
+// 	}
+//     return etemp;
 }
 
 bool Walk::AcceptOrNot(double newE, double oldE)
 {
-	//return true;
+	return true;
 	//return(newE < oldE);
 	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
-    return(RNG_NAME() <= exp(oldE-newE));
+    //return(RNG_NAME() <= exp(oldE-newE));
 }

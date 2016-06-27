@@ -53,13 +53,13 @@ private:
 	};
 public:
 	// Function to go n step 
-	void run(int MCsteps=1);
+	void run(int outer_steps=1);
 
 	// Central function of initialization
-	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tnsimplify = 3, const char* tfinal_walk_fname = "FinalWalk", int tn_inner = 0, int tno_saw = 0, int tmax_npivot = 0);
+	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tn_inner = 1000, const char* tfinal_walk_fname = "FinalWalk", int tnsimplify = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
-	int GoOneStep(const int MaxTrial = 10);
+	void GoOneStep();
 
 	// Add the pivot to the array
 	void add_pivot(int pivot_loc, OPERATION_NAME* isym, GPoint<double> trans);

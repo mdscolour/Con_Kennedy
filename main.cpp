@@ -20,18 +20,18 @@ $ ./start 1000 "0" 10 1000
 // Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
 int main(int argc,char *argv[])
 {
-	int length=10;
+	int length=100;
 	const char* init_name="0";
-	int pivot_per_step = 2;
-	int stepnum = 100;
+	int innter_loop = 1000;
+	int outer_loop = 10;
 	
 	if(argc>=2) length=atoi(argv[1]);
 	if(argc>=3) init_name=argv[2];
-   if(argc>=4) pivot_per_step=atoi(argv[3]);
-	if(argc>=5) stepnum=atoi(argv[4]);
+   if(argc>=4) innter_loop=atoi(argv[3]);
+	if(argc>=5) outer_loop=atoi(argv[4]);
    
- 	Walk w(length, init_name, pivot_per_step);
- 	w.run(stepnum);
+ 	Walk w(length, init_name, innter_loop);
+ 	w.run(outer_loop);
 
 #ifdef _WIN32
 	printf("\n");
