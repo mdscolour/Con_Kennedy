@@ -22,7 +22,7 @@ inline int Walk::find_segment(int itime, int npivot, int* ptime)
 	return(isegl);
 } // find_segment()
 
-Sphere Walk::GetStepi(int i)
+Sphere Walk::GetStepi(int i) //the old step_rval
 // This routine computes the ith point on the walk from the complicated 
 // data structure. Often we duplicate this code for speed rather than call this
 {
@@ -31,7 +31,7 @@ Sphere Walk::GetStepi(int i)
 	iseg = find_segment(i, npivot, ptime);
 	temp.euclidean_op(steps + i, shift + iseg, &igroup[iseg]);
 	return(temp);
-} // end step_rval
+} //
 
 void Walk::clean_pivot()
 // NB this does not create a walk. It only initializes things used by the 
@@ -368,7 +368,6 @@ void Walk::simplify()
 
 void Walk::GoOneStep()
 {
-	//const int MaxTrial = 10; // 10 times of trying to advance in one run !!!
 	generation++;
 	int inner = 0, accept_flag=0;
 	for (inner = 1; inner <= n_inner; inner++)
@@ -376,7 +375,7 @@ void Walk::GoOneStep()
 		Proposal prop(this);
 		//printf("%d \n",prop.pivot_loc);
 		accept_flag = pivot_strictly_saw(&prop);
-	    if (accept_flag >= 0) SAWaccept++;
+	   if (accept_flag >= 0) SAWaccept++;
 		if (npivot >= nsimplify)
 		{
 			simplify();
@@ -390,9 +389,8 @@ void Walk::GoOneStep()
 	{
 		//printf("%d generation, turn=%lf, MC accept ratio=%lf\n",generation, turn_frac(), 100.0 / double(MCtrial));
 	}
-	
 	// record the walk 
-	//Record(); 
+	Record(); 
 }
 
 Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tn_inner, const char* tfinal_walk_fname, int tnsimplify, int tno_saw, int tmax_npivot):
@@ -465,15 +463,16 @@ double Walk::turn_frac()
 void Walk::Record()
 {
 	FILE *fptr;
-	// 			// record the "data"
-	// 			fptr = fopen(data_fname, "a");
-	// 			fprintf(fptr, "%14.10f\n", 0.0);
-	// 			fclose(fptr);
+	// record the "data"
+	double endnorm = GetStepi(nsteps).topoint().norm();
+	fptr = fopen(data_fname, "a");
+   fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
+   fclose(fptr);
 
-	// record the walk itself
-	fptr = fopen(final_walk_fname, "w");
-	this->print(fptr);
-	fclose(fptr);
+//	// record the walk itself
+//	fptr = fopen(final_walk_fname, "w");
+//	this->print(fptr);
+//	fclose(fptr);
 }
 
 void Walk::run(int outer_steps)
@@ -486,6 +485,156 @@ void Walk::run(int outer_steps)
 	//printf("%d\n",SAWaccept);
 	if(npivot==0) Record();
 	else printf("error, npivot at the end of outer run.\n");
+}
+
+double Walk::GetRg2()
+{
+  GPoint<double> rc = GetStepi(0).topoint();
+  double dis = 0;
+  double rg2 = 0;
+  
+  for (int i=1;i<=nsteps;i++)
+  {
+  	rc = rc + GetStepi(i).topoint();
+  } 
+  rc /= (double)(nsteps+1);
+  
+  for (int i=0;i<=nsteps;i++)
+  {
+  	dis = (GetStepi(i).topoint()-rc).norm();
+  	rg2 += dis*dis;
+  } 
+  rg2 /= (nsteps+1);
+  return(rg2);
+}
+
+{
+int getautocorrelation(std::string);
+
+int main(int argc, char *argv[]) {
+	if (argc > 1) {
+		std::ostringstream sfolder;
+		sfolder << argv[1] << "/";
+		int out = getautocorrelation(sfolder.str());
+		return out;
+	} else {
+		std::cout << "No folder selected!" << std::endl;
+		return -1;
+	}
+}
+
+
+int getautocorrelation(std::string folder)
+{
+	
+	std::string datname;
+	
+	datname = folder + "ac.dat";
+	std::ifstream fin(datname.c_str());
+	
+	datname = folder + "ac_fkt.dat";
+	std::ofstream fout(datname.c_str(), std::ios::trunc);
+	
+	datname = folder + "Parameters.txt";
+	std::ofstream fout1(datname.c_str(),std::ios::trunc);
+	
+	unsigned n = 0;
+	unsigned long int intersteps;
+	double Re2;
+	double tmpRg2;
+	std::vector<double> Rg2;
+	double Rg2m = 0.;
+	double C0 = 0.;
+	double C = 0.;
+	double tao_int = 0.5;
+	unsigned M = 0;
+	
+	std::string line;
+	char line1[1000];
+	
+	// Read in the no of intersteps
+	fin.getline(line1, 1000);
+	sscanf(line1, "#autocorrelation_inter_steps=%lu", &intersteps);
+	
+	getline(fin,line);
+	
+	// Read in the values for Rg2
+	while ( getline(fin,line) ) {
+		std::istringstream sline(line);
+		
+		//if ( !( sline >> Re2 >> tmpRg2) )  {
+		if ( !( sline >> tmpRg2 >>Re2 ) )  {
+			std::cerr << "Error reading line " << n << "!" << std::endl;
+			break;
+//			std::cerr << "Error reading file!" << std::endl;
+//			return -1;
+		}
+		
+		Rg2.push_back(tmpRg2);
+		Rg2m += tmpRg2;
+		++n;
+	}
+	
+	if (n != Rg2.size()) {
+		std::cerr << "Alert! " << n << std::endl;
+	}
+	
+	std::cout << "Rg2[0] = " << Rg2[0] << std::endl;
+	fout1 <<"Rg2[0]      " << Rg2[0] <<"\n";
+	
+	unsigned nu = n - n/4;
+	
+	Rg2m /= n;
+	
+	// Calculate C(0)
+	for (unsigned i=0; i<n; ++i)
+		C0 += (Rg2[i]-Rg2m)*(Rg2[i]-Rg2m);
+	
+	C0 /= n;
+	
+	std::cout << "Number of data: " << n << std::endl;
+	fout1 << "NumberOfData      " << n <<"\n";
+	std::cout << "Mean radius of gyration: " << Rg2m << std::endl;
+	fout1 << "MeanRadiusOfGyration      " << Rg2m<<"\n";
+	fout << "# Autocorrelation function C(t); C(0)="<< C0 <<"\n";
+	fout << "# t\tC(t)\ttao_int\n";
+	fout << "0 1 0.5\n";
+	//fout << "# t\tC0*C(t)\tC(t)\ttao_int\t10*tao_int\n";
+	//fout << "0 " << C0 << " 1 0.5 5.0\n";
+	
+	
+	bool tmp = false;
+	
+	// Calculate C(t) for t>0
+	for (unsigned t=1; t<nu; ++t) {
+		
+		C = 0;
+		
+		// Go through all the data
+		for (unsigned i=0; i<(n-t); ++i)
+			C += (Rg2[i]-Rg2m)*(Rg2[i+t]-Rg2m);
+			
+		C /= (n-t)*C0;
+		
+		// Integrate w/ very simple rule
+		tao_int += intersteps*C;
+		
+		//fout << t*intersteps << "\t" << C*C0 << "\t" << C << "\t" << tao_int << "\t" << 10*tao_int << std::endl;
+		fout << t*intersteps << "\t" << C << "\t" << tao_int << std::endl;
+		if ( (tmp==false) && ((t*intersteps) >= 10*tao_int) ) {
+			M = tao_int;
+			std::cout << "tao_int = " << M << std::endl;
+			fout1<<  "tao_int      " << M << "\n";
+			tmp = true;
+		}
+	}
+	
+	fin.close();
+	fout.close();
+	fout1.close();
+	
+	return 0;
+}
 }
 
 //////////////////////////////////////////////////////////////////////////

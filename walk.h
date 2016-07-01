@@ -96,6 +96,8 @@ public:
 
 	// Get the current i step
 	Sphere GetStepi(int i);
+	
+	double GetRg2();
 
 	int GetLength(){ return(nsteps); }
 	int GetPivotNum(){ return(npivot); }
