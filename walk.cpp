@@ -463,9 +463,11 @@ double Walk::turn_frac()
 void Walk::Record()
 {
 	FILE *fptr;
+	char buffer[50]; // <- danger, only storage for 256 characters.
+	sprintf(buffer, "%s_%d", data_fname,nsteps);
 	// record the "data"
 	double endnorm = GetStepi(nsteps).topoint().norm();
-	fptr = fopen(data_fname, "a");
+	fptr = fopen(buffer, "a");
     fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
     fclose(fptr);
 
@@ -482,7 +484,7 @@ void Walk::run(int outer_steps, int discard)
 	{
 		GoOneStep(n_inner,true);
 	}
-	printf("%d generation, %d * %d trial, turn=%lf, accept ratio=%lf\n", generation, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
+	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
 	if(npivot!=0) printf("error, npivot at the end of outer run.\n");
 }
@@ -511,15 +513,13 @@ double Walk::GetRg2()
 int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 {
 	std::string datname;
-	std::stringstream temp;
-	temp<<nsteps;
-	temp>>datname;
+	std::stringstream n_temp;
+	n_temp<<nsteps;
 	
-	datname = "ac_fkt_"+datname;
+	datname = "savedata/auto/ac_fkt_"+n_temp.str();
 	std::ofstream fout(datname.c_str(), std::ios::trunc);
 	
-	temp>>datname;
-	datname = "Parameters_"+datname;
+	datname = "savedata/auto/Parameters_"+n_temp.str();
 	std::ofstream fout1(datname.c_str(),std::ios::trunc);
 	
 	//unsigned long int intersteps = 1;
@@ -592,7 +592,7 @@ int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 			//std::cout << "tao_int = " << M << std::endl;
 			fout1<<  "tao_int      " << M << "\n";
 			tmp = true;
-			break;
+// 			break;
 		}
 	}
 	
