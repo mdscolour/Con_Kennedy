@@ -11,6 +11,12 @@ and will:
 #include<math.h>
 #include<stdio.h>
 #include <iostream>
+#include <vector>
+#include<fstream>
+#include<string>
+#include<iterator>
+#include <sstream>
+#include <time.h>
 using namespace std;
 
 // Define "RNG_NAME" for random number, in linux using drand48(), in windows using rand(),

@@ -366,11 +366,11 @@ void Walk::simplify()
 	clean_pivot();
 } // end walk::simplify()
 
-void Walk::GoOneStep()
+void Walk::GoOneStep(int stepnum, bool isrecord)
 {
 	generation++;
 	int inner = 0, accept_flag=0;
-	for (inner = 1; inner <= n_inner; inner++)
+	for (inner = 1; inner <= stepnum; inner++)
 	{
 		Proposal prop(this);
 		//printf("%d \n",prop.pivot_loc);
@@ -390,7 +390,7 @@ void Walk::GoOneStep()
 		//printf("%d generation, turn=%lf, MC accept ratio=%lf\n",generation, turn_frac(), 100.0 / double(MCtrial));
 	}
 	// record the walk 
-	Record(); 
+	if(isrecord) Record(); 
 }
 
 Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tn_inner, const char* tfinal_walk_fname, int tnsimplify, int tno_saw, int tmax_npivot):
@@ -466,8 +466,8 @@ void Walk::Record()
 	// record the "data"
 	double endnorm = GetStepi(nsteps).topoint().norm();
 	fptr = fopen(data_fname, "a");
-   fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
-   fclose(fptr);
+    fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
+    fclose(fptr);
 
 //	// record the walk itself
 //	fptr = fopen(final_walk_fname, "w");
@@ -475,16 +475,16 @@ void Walk::Record()
 //	fclose(fptr);
 }
 
-void Walk::run(int outer_steps)
+void Walk::run(int outer_steps, int discard)
 {
+	GoOneStep(discard,false);
 	for (int i = 0; i < outer_steps; i++)
 	{
-		GoOneStep();
+		GoOneStep(n_inner,true);
 	}
-	printf("%d generation, %d * %d trial, turn=%lf, accept ratio=%lf\n", generation, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner));
+	printf("%d generation, %d * %d trial, turn=%lf, accept ratio=%lf\n", generation, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
-	if(npivot==0) Record();
-	else printf("error, npivot at the end of outer run.\n");
+	if(npivot!=0) printf("error, npivot at the end of outer run.\n");
 }
 
 double Walk::GetRg2()
@@ -508,39 +508,21 @@ double Walk::GetRg2()
   return(rg2);
 }
 
+int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 {
-int getautocorrelation(std::string);
-
-int main(int argc, char *argv[]) {
-	if (argc > 1) {
-		std::ostringstream sfolder;
-		sfolder << argv[1] << "/";
-		int out = getautocorrelation(sfolder.str());
-		return out;
-	} else {
-		std::cout << "No folder selected!" << std::endl;
-		return -1;
-	}
-}
-
-
-int getautocorrelation(std::string folder)
-{
-	
 	std::string datname;
+	std::stringstream temp;
+	temp<<nsteps;
+	temp>>datname;
 	
-	datname = folder + "ac.dat";
-	std::ifstream fin(datname.c_str());
-	
-	datname = folder + "ac_fkt.dat";
+	datname = "ac_fkt_"+datname;
 	std::ofstream fout(datname.c_str(), std::ios::trunc);
 	
-	datname = folder + "Parameters.txt";
+	temp>>datname;
+	datname = "Parameters_"+datname;
 	std::ofstream fout1(datname.c_str(),std::ios::trunc);
 	
-	unsigned n = 0;
-	unsigned long int intersteps;
-	double Re2;
+	//unsigned long int intersteps = 1;
 	double tmpRg2;
 	std::vector<double> Rg2;
 	double Rg2m = 0.;
@@ -550,36 +532,19 @@ int getautocorrelation(std::string folder)
 	unsigned M = 0;
 	
 	std::string line;
-	char line1[1000];
-	
-	// Read in the no of intersteps
-	fin.getline(line1, 1000);
-	sscanf(line1, "#autocorrelation_inter_steps=%lu", &intersteps);
-	
-	getline(fin,line);
 	
 	// Read in the values for Rg2
-	while ( getline(fin,line) ) {
-		std::istringstream sline(line);
-		
-		//if ( !( sline >> Re2 >> tmpRg2) )  {
-		if ( !( sline >> tmpRg2 >>Re2 ) )  {
-			std::cerr << "Error reading line " << n << "!" << std::endl;
-			break;
-//			std::cerr << "Error reading file!" << std::endl;
-//			return -1;
-		}
-		
+	for(int k=0;k<n;k++)
+	{
+		GoOneStep(intersteps,false);
+		tmpRg2 = GetRg2();		
 		Rg2.push_back(tmpRg2);
 		Rg2m += tmpRg2;
-		++n;
 	}
 	
-	if (n != Rg2.size()) {
-		std::cerr << "Alert! " << n << std::endl;
-	}
+	if (n != Rg2.size()) {std::cerr << "Alert! " << n << std::endl;}
 	
-	std::cout << "Rg2[0] = " << Rg2[0] << std::endl;
+	//std::cout << "Rg2[0] = " << Rg2[0] << std::endl;
 	fout1 <<"Rg2[0]      " << Rg2[0] <<"\n";
 	
 	unsigned nu = n - n/4;
@@ -587,18 +552,18 @@ int getautocorrelation(std::string folder)
 	Rg2m /= n;
 	
 	// Calculate C(0)
-	for (unsigned i=0; i<n; ++i)
+	for (int i=0; i<n; ++i)
 		C0 += (Rg2[i]-Rg2m)*(Rg2[i]-Rg2m);
 	
 	C0 /= n;
 	
-	std::cout << "Number of data: " << n << std::endl;
+	//std::cout << "Number of data: " << n << std::endl;
 	fout1 << "NumberOfData      " << n <<"\n";
-	std::cout << "Mean radius of gyration: " << Rg2m << std::endl;
+	//std::cout << "Mean radius of gyration: " << Rg2m << std::endl;
 	fout1 << "MeanRadiusOfGyration      " << Rg2m<<"\n";
 	fout << "# Autocorrelation function C(t); C(0)="<< C0 <<"\n";
 	fout << "# t\tC(t)\ttao_int\n";
-	fout << "0 1 0.5\n";
+	fout << "0    1    0.5\n";
 	//fout << "# t\tC0*C(t)\tC(t)\ttao_int\t10*tao_int\n";
 	//fout << "0 " << C0 << " 1 0.5 5.0\n";
 	
@@ -620,21 +585,21 @@ int getautocorrelation(std::string folder)
 		tao_int += intersteps*C;
 		
 		//fout << t*intersteps << "\t" << C*C0 << "\t" << C << "\t" << tao_int << "\t" << 10*tao_int << std::endl;
-		fout << t*intersteps << "\t" << C << "\t" << tao_int << std::endl;
+		fout << t*intersteps << "    " << C << "    " << tao_int << std::endl;
 		if ( (tmp==false) && ((t*intersteps) >= 10*tao_int) ) {
-			M = tao_int;
-			std::cout << "tao_int = " << M << std::endl;
+			M = (unsigned int)tao_int;
+			//std::cout << "the number of step truncated " <<t*intersteps<<endl;
+			//std::cout << "tao_int = " << M << std::endl;
 			fout1<<  "tao_int      " << M << "\n";
 			tmp = true;
+			break;
 		}
 	}
 	
-	fin.close();
 	fout.close();
 	fout1.close();
 	
-	return 0;
-}
+	return M;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -53,13 +53,15 @@ private:
 	};
 public:
 	// Function to go n step 
-	void run(int outer_steps=1);
+	void run(int outer_steps, int discard);
+
+	int GetAutocorrelation(int n, unsigned long int intersteps = 10);
 
 	// Central function of initialization
 	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tn_inner = 1000, const char* tfinal_walk_fname = "FinalWalk", int tnsimplify = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
-	void GoOneStep();
+	void GoOneStep(int stepnum, bool isrecord = true);
 
 	// Add the pivot to the array
 	void add_pivot(int pivot_loc, OPERATION_NAME* isym, GPoint<double> trans);

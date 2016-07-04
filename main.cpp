@@ -20,18 +20,25 @@ $ ./start 1000 "0" 10 1000
 // Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
 int main(int argc,char *argv[])
 {
-	int length=100;
+	//clock_t start, finish;
+
+	int length=1000;
 	const char* init_name="0";
 	int innter_loop = 1000;
-	int outer_loop = 10;
+	int outer_loop = 0;
+	int discard = 10000;
 	
 	if(argc>=2) length=atoi(argv[1]);
 	if(argc>=3) init_name=argv[2];
-   if(argc>=4) innter_loop=atoi(argv[3]);
-	if(argc>=5) outer_loop=atoi(argv[4]);
-   
- 	Walk w(length, init_name, innter_loop);
- 	w.run(outer_loop);
+
+	if(argc>=4) outer_loop=atoi(argv[3]); // the third is the outer loop and forth is the inner
+	if(argc>=5) innter_loop=atoi(argv[4]);
+
+	if(argc>=6) discard=atoi(argv[5]);
+	
+	Walk w(length, init_name, innter_loop);
+	if(outer_loop==0) {w.run(0,discard); cout<<"the intership is "<<10<<" and aucor. time is "<<w.GetAutocorrelation(500,10)<<endl;}
+	else w.run(outer_loop,discard);
 
 #ifdef _WIN32
 	printf("\n");
