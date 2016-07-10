@@ -17,12 +17,13 @@ $ ./start 1000 "0" 10 1000
 #include "point.h"
 #include "walk.h"
 
-// Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
+////////   ./start length 0or"FinalWalk"(name) discarded outerloop innerloop (in MCSs)
+/////// when outerloop is 0, print autocorrelation time for 10 (MCSs) each record and 1000 records total.
 int main(int argc,char *argv[])
 {
 	//clock_t start, finish;
 
-	int length=16000;
+	int length=100;
 	const char* init_name="0";
 	int innter_loop = 500;
 	int outer_loop = 1000;
@@ -36,6 +37,7 @@ int main(int argc,char *argv[])
 	if(argc>=6) innter_loop=atoi(argv[5]);
 	
 	Walk w(length, init_name, innter_loop);
+	// Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
 	if(outer_loop==0) {w.run(0,discard); cout<<"the length is "<<length<<" and aucor. time is "<<w.GetAutocorrelation(1000,10)<<endl;}
 	else w.run(outer_loop,discard);
 

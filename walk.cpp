@@ -480,10 +480,10 @@ void Walk::Record()
 
 void Walk::run(int outer_steps, int discard)
 {
-	GoOneStep(discard,false);CheckAll();
+	GoOneStep(discard,false);
 	for (int i = 0; i < outer_steps; i++)
 	{
-		GoOneStep(n_inner,true);CheckAll();
+		GoOneStep(n_inner,true);
 	}
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
