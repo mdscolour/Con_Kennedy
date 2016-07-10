@@ -295,6 +295,7 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	{
 		//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
 		//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
+		printf("error in accept\n");
 		return(-count);
 	}	
 } // end pivot_strictly_saw()
@@ -375,7 +376,7 @@ void Walk::GoOneStep(int stepnum, bool isrecord)
 		Proposal prop(this);
 		//printf("%d \n",prop.pivot_loc);
 		accept_flag = pivot_strictly_saw(&prop);
-	   if (accept_flag >= 0) SAWaccept++;
+		if (accept_flag >= 0) {SAWaccept++;}
 		if (npivot >= nsimplify)
 		{
 			simplify();
@@ -466,7 +467,7 @@ void Walk::Record()
 	char buffer[50]; // <- danger, only storage for 256 characters.
 	sprintf(buffer, "%s_%d", data_fname,nsteps);
 	// record the "data"
-	double endnorm = GetStepi(nsteps).topoint().norm();
+	double endnorm = GetStepi(nsteps).center().norm();
 	fptr = fopen(buffer, "a");
     fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
     fclose(fptr);
@@ -479,10 +480,10 @@ void Walk::Record()
 
 void Walk::run(int outer_steps, int discard)
 {
-	GoOneStep(discard,false);
+	GoOneStep(discard,false);CheckAll();
 	for (int i = 0; i < outer_steps; i++)
 	{
-		GoOneStep(n_inner,true);
+		GoOneStep(n_inner,true);CheckAll();
 	}
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
@@ -491,19 +492,19 @@ void Walk::run(int outer_steps, int discard)
 
 double Walk::GetRg2()
 {
-  GPoint<double> rc = GetStepi(0).topoint();
+  GPoint<double> rc = GetStepi(0).center();
   double dis = 0;
   double rg2 = 0;
   
   for (int i=1;i<=nsteps;i++)
   {
-  	rc = rc + GetStepi(i).topoint();
+  	rc = rc + GetStepi(i).center();
   } 
   rc /= (double)(nsteps+1);
   
   for (int i=0;i<=nsteps;i++)
   {
-  	dis = (GetStepi(i).topoint()-rc).norm();
+  	dis = (GetStepi(i).center()-rc).norm();
   	rg2 += dis*dis;
   } 
   rg2 /= (nsteps+1);
@@ -642,3 +643,45 @@ bool Walk::AcceptOrNot(double newE, double oldE)
 	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
     //return(RNG_NAME() <= exp(oldE-newE));
 }
+
+bool Walk::Sokal(int pivot_loc)
+{
+	for (int i=pivot_loc+1;i<=nsteps;i++)
+	{
+		Sphere pp = GetStepi(i);
+		int j = pivot_loc-1;
+		
+		while (j>=0)
+		{
+			double dis = GetStepi(j).distance(pp);
+			if (dis <= steps[i].r+steps[j].r)
+			{
+				printf("%d aaa %d %d %d\n",pivot_loc,i,j,ptime[find_segment(pivot_loc,npivot,ptime)]);
+				return false;
+			}
+			else j -= (int)dis;
+		}
+	}
+	return true;
+}
+
+bool Walk::CheckAll()
+{
+	for (int i=0;i<=nsteps;i++)
+	{
+		Sphere pp = GetStepi(i);
+		for (int j=i+1;j<nsteps;j++)
+		{
+			double dis = GetStepi(j).distance(pp);
+			if (dis <= steps[i].r+steps[j].r)
+			{
+				printf("%d %d wrong and segment is %d %d\n",i,j,ptime[find_segment(i,npivot,ptime)],ptime[find_segment(j,npivot,ptime)]);
+				return false;
+			}
+		}
+	}
+	printf("everything is fine\n");
+	return true;
+}
+
+

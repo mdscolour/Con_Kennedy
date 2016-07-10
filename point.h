@@ -80,12 +80,12 @@ public:
 	Sphere operator+(GPoint<double> p){ return Sphere(x + p.x, y + p.y, z + p.z, r, k); }
 	//Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r); }
 	GPoint<double> operator-(Sphere p){ return GPoint<double>(x - p.x, y - p.y, z - p.z); }
-	GPoint<double> topoint(){return GPoint<double>(x,y,z);}
+	GPoint<double> center(){return GPoint<double>(x,y,z);}
 	
 	void assign(double xx, double yy, double zz, double rr,double kk) { x = xx; y = yy; z = zz; r = rr; k = kk; }
 	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf %lf %lf \n", x, y, z, r, k); }
 	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf %lf %lf \n", &x, &y, &z, &r, &k); }
-	int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t > s.r+this->r) ? int(t+(1-s.r+this->r)) : 0); }
+	int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t > s.r+this->r) ? int(t+(1-s.r-this->r)) : 0); }
 	double distance(const Sphere& s){return(sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)));}
 	//double norm(){return(sqrt(x*x + y*y + z*z));}
 	inline void euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op);

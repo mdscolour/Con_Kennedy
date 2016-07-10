@@ -22,7 +22,7 @@ int main(int argc,char *argv[])
 {
 	//clock_t start, finish;
 
-	int length=1000;
+	int length=16000;
 	const char* init_name="0";
 	int innter_loop = 500;
 	int outer_loop = 1000;

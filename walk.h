@@ -96,6 +96,10 @@ public:
 	// Called once at the end of run().
 	void Record();
 
+	bool Sokal(int pivot_loc);
+
+	bool CheckAll();
+
 	// Get the current i step
 	Sphere GetStepi(int i);
 	
