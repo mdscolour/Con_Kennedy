@@ -469,13 +469,16 @@ void Walk::Record()
 	// record the "data"
 	double endnorm = GetStepi(nsteps).center().norm();
 	fptr = fopen(buffer, "a");
-    fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
-    fclose(fptr);
-
-//	// record the walk itself
-//	fptr = fopen(final_walk_fname, "w");
-//	this->print(fptr);
-//	fclose(fptr);
+	fprintf(fptr,"%14.10f    %14.10f \n",GetRg2(),endnorm*endnorm);
+	fclose(fptr);
+}
+void Walk::Writedown()
+{
+	FILE *fptr;
+	// record the walk itself
+	fptr = fopen(final_walk_fname, "w");
+	this->print(fptr);
+	fclose(fptr);
 }
 
 void Walk::run(int outer_steps, int discard)
@@ -483,8 +486,10 @@ void Walk::run(int outer_steps, int discard)
 	GoOneStep(discard,false);
 	for (int i = 0; i < outer_steps; i++)
 	{
-		GoOneStep(n_inner,true);
+		//GoOneStep(n_inner,true);
+		GoOneStep(n_inner,false);
 	}
+	Writedown();
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
 	if(npivot!=0) printf("error, npivot at the end of outer run.\n");

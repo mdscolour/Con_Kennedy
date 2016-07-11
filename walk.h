@@ -95,6 +95,8 @@ public:
 
 	// Called once at the end of run().
 	void Record();
+	
+	void Writedown();
 
 	bool Sokal(int pivot_loc);
 
