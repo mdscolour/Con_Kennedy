@@ -78,7 +78,7 @@ public:
 	//Sphere(const GPoint& p) :GPoint(p.x, p.y, p.z),r(RADIUS){}
 
 	Sphere operator+(GPoint<double> p){ return Sphere(x + p.x, y + p.y, z + p.z, r, k); }
-	//Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r); }
+	Sphere operator-(GPoint<double> p){ return Sphere(x - p.x, y - p.y, z - p.z, r, k); }
 	GPoint<double> operator-(Sphere p){ return GPoint<double>(x - p.x, y - p.y, z - p.z); }
 	GPoint<double> center(){return GPoint<double>(x,y,z);}
 	
@@ -114,6 +114,7 @@ public:
 
 	//void print(FILE *fptr){ row1.print(fptr); row2.print(fptr); row3.print(fptr); }
 	Matrix& identity(){ row1 = GPoint<double>(1, 0, 0); row2 = GPoint<double>(0, 1, 0); row3 = GPoint<double>(0, 0, 1); return(*this); }
+	void print(){printf("%lf %lf %lf \n%lf %lf %lf \n%lf %lf %lf \n",row1.x,row1.y,row1.z,row2.x,row2.y,row2.z,row3.x,row3.y,row3.z);}
 	
 	GPoint<double> dot(GPoint<double> v){ return GPoint<double>(row1.dot(v), row2.dot(v), row3.dot(v)); }	
 	Sphere dot(Sphere v){ return Sphere(row1.dot(v), row2.dot(v), row3.dot(v), v.r, v.k); }

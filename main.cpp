@@ -23,11 +23,11 @@ int main(int argc,char *argv[])
 {
 	//clock_t start, finish;
 
-	int length=100;
+	int length=16000;
 	const char* init_name="0";
-	int innter_loop = 500;
-	int outer_loop = 1000;
-	int discard = 20000;
+	int innter_loop = 50;
+	int outer_loop = 0;
+	int discard = 1000000;
 	
 	if(argc>=2) length=atoi(argv[1]);
 	if(argc>=3) init_name=argv[2];

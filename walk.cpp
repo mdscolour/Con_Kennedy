@@ -63,7 +63,7 @@ void Walk::line_initialize(int direction)
 		default: printf("bad case in line_initialize() d\n"); exit(0); break;
 		}
 	}
-	old_energy = GetEnergy();
+	old_energy = GetEnergyForAll();
 } // end line_initialize()
 
 void Walk::deallocate()
@@ -136,6 +136,13 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 // where count is the number of distance computations done.
 // This return value is only used to study how long the routine takes. 
 {
+	double new_energy = GetEnergyForOne(prop->pivot_loc,&(prop->op));
+	if (AcceptOrNot(new_energy,old_energy)==false) 
+	{
+		//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, new_energy, old_energy);
+		return(-1);
+	}
+
 	OPERATION_NAME *pgroup_jseg, *pgroup_iseg;
 	int i, j, ip, jp, iseg, jseg, imin, imax, jmin, jmax;
 	int separation, min_separation, sep_mod;
@@ -283,21 +290,11 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	} // end while 
 
 	// If we reach this point the walk is self-avoiding. 
-	double new_energy = GetEnergy();
-	if (AcceptOrNot(new_energy,old_energy))
-	{
-		//printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
-		old_energy = new_energy;
-		add_pivot(pivot_loc, poper, transi);
-		return(count);
-	}
-	else
-	{
-		//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
-		//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
-		printf("error in accept\n");
-		return(-count);
-	}	
+	//printf("The %d step accepted. new energy: %.10lf, old energy:%.10lf  \n", generation,new_energy,old_energy);
+	//prop->op.print();
+	old_energy = new_energy;
+	add_pivot(pivot_loc, poper, transi);
+	return(count);
 } // end pivot_strictly_saw()
 
 void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
@@ -522,10 +519,10 @@ int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 	std::stringstream n_temp;
 	n_temp<<nsteps;
 	
-	datname = "savedata/auto/ac_fkt_"+n_temp.str();
+	datname = "savedata/auto2/ac_fkt_"+n_temp.str();
 	std::ofstream fout(datname.c_str(), std::ios::trunc);
 	
-	datname = "savedata/auto/Parameters_"+n_temp.str();
+	datname = "savedata/auto2/Parameters_"+n_temp.str();
 	std::ofstream fout1(datname.c_str(),std::ios::trunc);
 	
 	//unsigned long int intersteps = 1;
@@ -608,47 +605,6 @@ int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 	return M;
 }
 
-//////////////////////////////////////////////////////////////////////////
-// This is the part for MC
-//////////////////////////////////////////////////////////////////////////
-
-double Walk::GetEnergy()
-{
-/*	double r = 99;
-	double etemp = 0;
-	for (int i = 0; i <= nsteps; i++)
-	{
-		if (i % 3 == 2) i++;
-		for (int j = 2; j <= nsteps; j = j + 3)
-		{
-			r = (GetStepi(i) - GetStepi(j)).distance();
-			if (1 < r && r < 10)
-			{
-				etemp += -1.0 / r;
-			}
-			if (r < 1) etemp += -1;
-		}
-	}
-	return etemp;*/
-
-	return -1; // now is a empty function
-// 	double etemp = 0;
-// 	for (int i = 1; i < nsteps; i++)
-// 	{
-//         etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
-// 		//printf("%lf\n",((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i))));
-// 	}
-//     return etemp;
-}
-
-bool Walk::AcceptOrNot(double newE, double oldE)
-{
-	return true;
-	//return(newE < oldE);
-	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
-    //return(RNG_NAME() <= exp(oldE-newE));
-}
-
 bool Walk::Sokal(int pivot_loc)
 {
 	for (int i=pivot_loc+1;i<=nsteps;i++)
@@ -687,6 +643,63 @@ bool Walk::CheckAll()
 	}
 	printf("everything is fine\n");
 	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// This is the part for MC
+//////////////////////////////////////////////////////////////////////////
+
+double Walk::GetEnergyForAll()
+{
+/*  //// hydrogen bond
+    double r = 99;
+	double etemp = 0;
+	for (int i = 0; i <= nsteps; i++)
+	{
+		if (i % 3 == 2) i++;
+		for (int j = 2; j <= nsteps; j = j + 3)
+		{
+			r = (GetStepi(i) - GetStepi(j)).distance();
+			if (1 < r && r < 10)
+			{
+				etemp += -1.0 / r;
+			}
+			if (r < 1) etemp += -1;
+		}
+	}
+	return etemp;*/
+
+	//return -1; // this is for a empty function
+
+	//// 
+	double etemp = 0;
+	for (int i = 1; i < nsteps; i++)
+	{
+        etemp += steps[i].k*((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i)));
+		//printf("%lf\n",((GetStepi(i-1)-GetStepi(i)).dot(GetStepi(i+1)-GetStepi(i))));
+	}
+    return etemp;
+}
+
+bool Walk::AcceptOrNot(double newE, double oldE)
+{
+	//return true;
+	return(RNG_NAME() <= exp(oldE-newE));
+	//return(newE < oldE);
+	//return(RNG_NAME() <= (exp(newE / oldE) - 1) / (exp(1) - 1));
+}
+
+// must use before add_pivot
+double Walk::GetEnergyForOne(int ipivot, OPERATION_NAME* op)
+{
+	Sphere pp = GetStepi(ipivot);
+	//find new positon for ipivot + 1
+	Sphere res, relpp;
+	GPoint<double> pshift = pp.center();
+	relpp = GetStepi(ipivot+1)-pshift;
+	res.euclidean_op(&relpp,&pshift,op);
+	double newE = old_energy - steps[ipivot].k*((GetStepi(ipivot-1)-pp).dot(GetStepi(ipivot+1)-pp)) + steps[ipivot].k*((GetStepi(ipivot-1)-pp).dot(res-pp));
+	return newE;
 }
 
 

@@ -88,7 +88,9 @@ public:
 	void clean_pivot();
 
 	// A example code to calculate the a energy, lower is better. now is a empty function. 
-	double GetEnergy();
+	double GetEnergyForAll();
+
+	double GetEnergyForOne(int ipivot, OPERATION_NAME* op);
 
 	// Function to judge whether accept the pivots, now is empty
 	bool AcceptOrNot(double newE, double oldE);
