@@ -294,6 +294,9 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	//prop->op.print();
 	old_energy = new_energy;
 	add_pivot(pivot_loc, poper, transi);
+	
+	//if(abs(new_energy-GetEnergyForAll())<1e-10) printf("energy is fine\n");
+	//else printf("energy is wrong %.20lf and %.20lf \n",new_energy,GetEnergyForAll());
 	return(count);
 } // end pivot_strictly_saw()
 
@@ -462,7 +465,7 @@ void Walk::Record()
 {
 	FILE *fptr;
 	char buffer[50]; // <- danger, only storage for 256 characters.
-	sprintf(buffer, "%s_%d", data_fname,nsteps);
+	sprintf(buffer, "k%d_%s_%d", (int)steps->k,data_fname,nsteps);
 	// record the "data"
 	double endnorm = GetStepi(nsteps).center().norm();
 	fptr = fopen(buffer, "a");
@@ -486,7 +489,7 @@ void Walk::run(int outer_steps, int discard)
 		//GoOneStep(n_inner,true);
 		GoOneStep(n_inner,false);
 	}
-	Writedown();
+	//Writedown();
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
 	if(npivot!=0) printf("error, npivot at the end of outer run.\n");
@@ -519,10 +522,10 @@ int Walk::GetAutocorrelation(int n, unsigned long int intersteps)
 	std::stringstream n_temp;
 	n_temp<<nsteps;
 	
-	datname = "savedata/auto2/ac_fkt_"+n_temp.str();
+	datname = "savedata/kauto/ac_fkt_"+n_temp.str();
 	std::ofstream fout(datname.c_str(), std::ios::trunc);
 	
-	datname = "savedata/auto2/Parameters_"+n_temp.str();
+	datname = "savedata/kauto/Parameters_"+n_temp.str();
 	std::ofstream fout1(datname.c_str(),std::ios::trunc);
 	
 	//unsigned long int intersteps = 1;
@@ -692,6 +695,10 @@ bool Walk::AcceptOrNot(double newE, double oldE)
 // must use before add_pivot
 double Walk::GetEnergyForOne(int ipivot, OPERATION_NAME* op)
 {
+	// special case
+	if(ipivot==0) return old_energy;
+	//if(ipivot==nsteps) printf("error choosing last step\n");
+	
 	Sphere pp = GetStepi(ipivot);
 	//find new positon for ipivot + 1
 	Sphere res, relpp;
