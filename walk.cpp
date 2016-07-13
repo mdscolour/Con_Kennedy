@@ -46,7 +46,7 @@ void Walk::clean_pivot()
 	ptime[1] = nsteps + 1;
 }
 
-void Walk::line_initialize(int direction)
+void Walk::line_initialize(int direction, double rigidity, double radius)
 { 
 	int i;
 	double i1, i2, i3;
@@ -54,7 +54,7 @@ void Walk::line_initialize(int direction)
 	i1 = 0; i2 = 0; i3 = 0;
 	for (i = 0; i <= nsteps; i++)
 	{
-		steps[i].assign(i1, i2, i3, RADIUS, RIGID);
+		steps[i].assign(i1, i2, i3, radius, rigidity);
 		//if(i == 5) steps[i].assign(i1, i2, i3, 0.2, 20);
 		switch (direction) {
 		case 1: i1++; break;
@@ -394,7 +394,7 @@ void Walk::GoOneStep(int stepnum, bool isrecord)
 	if(isrecord) Record(); 
 }
 
-Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tn_inner, const char* tfinal_walk_fname, int tnsimplify, int tno_saw, int tmax_npivot):
+Walk::Walk(int tnsteps, const char* tinit_walk_fname, int tn_inner, double tk, double tr, const char* tfinal_walk_fname, int tnsimplify, int tno_saw, int tmax_npivot):
 n_inner(tn_inner),
 max_npivot(tmax_npivot),
 no_saw(tno_saw),
@@ -433,7 +433,7 @@ SAWaccept(0)
 	// for the initial walk. direction is its direction:
 	// 1=horizontal, 2=45 degs, 3=vertical
 	int direction = 2;
-	if (init_walk_fname[0] == '0') line_initialize(direction);
+	if (init_walk_fname[0] == '0') line_initialize(direction,tk,tr);
 	else
 	{
 		FILE *fptr = fopen(init_walk_fname, "r");
@@ -486,8 +486,8 @@ void Walk::run(int outer_steps, int discard)
 	GoOneStep(discard,false);
 	for (int i = 0; i < outer_steps; i++)
 	{
-		//GoOneStep(n_inner,true);
-		GoOneStep(n_inner,false);
+		GoOneStep(n_inner,true);
+		//GoOneStep(n_inner,false);
 	}
 	//Writedown();
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));

@@ -58,7 +58,7 @@ public:
 	int GetAutocorrelation(int n, unsigned long int intersteps = 10);
 
 	// Central function of initialization
-	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tn_inner = 1000, const char* tfinal_walk_fname = "FinalWalk", int tnsimplify = 0, int tno_saw = 0, int tmax_npivot = 0);
+	Walk(int tnsteps = 1000, const char* tinit_walk_fname = "0", int tn_inner = 1000, double tk=10, double tr=0.4, const char* tfinal_walk_fname = "FinalWalk", int tnsimplify = 0, int tno_saw = 0, int tmax_npivot = 0);
 	
 	// Function to go one step in markov chain
 	void GoOneStep(int stepnum, bool isrecord = true);
@@ -82,7 +82,7 @@ public:
 	void deallocate();
 
 	// Initializes walk to be straight line
-	void line_initialize(int direction);
+	void line_initialize(int direction, double rigidity, double radius);
 
 	// Clean the pivot cache
 	void clean_pivot();

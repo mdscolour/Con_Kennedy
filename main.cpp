@@ -28,6 +28,7 @@ int main(int argc,char *argv[])
 	int innter_loop = 1000;
 	int outer_loop = 1000;
 	int discard = 1000000;
+	int rigidity = 10;
 	
 	if(argc>=2) length=atoi(argv[1]);
 	if(argc>=3) init_name=argv[2];
@@ -36,9 +37,11 @@ int main(int argc,char *argv[])
 	if(argc>=5) outer_loop=atoi(argv[4]); // the forth is the outer loop and fifth is the inner
 	if(argc>=6) innter_loop=atoi(argv[5]);
 	
-	Walk w(length, init_name, innter_loop);
+	if(argc>=7) rigidity=atoi(argv[6]);
+	
+	Walk w(length, init_name, innter_loop,rigidity,0.4);
 	// Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
-	if(outer_loop==0) {w.run(0,discard); cout<<"Length: "<<length<<",k is "<<RIGID<<" and aucor. time is "<<w.GetAutocorrelation(1000,10)<<endl;}
+	if(outer_loop==0) {w.run(0,discard); cout<<"Length: "<<length<<",k is "<<rigidity<<" and aucor. time is "<<w.GetAutocorrelation(3000,10)<<endl;}
 	else w.run(outer_loop,discard);
 
 #ifdef _WIN32
