@@ -81,7 +81,7 @@ void Walk::print(FILE *fptr)
 // This is for debugging. It is incompatible with walk::scanf()
 {
 	int i;
-	fprintf(fptr, "%d %d %lf \n", nsteps, generation, old_energy);
+	fprintf(fptr, "N=%d ind=%d r=%lf k=%lf \n", nsteps, generation, steps->r, steps->k);
 	for (i = 0; i <= nsteps; i++) steps[i].print(fptr);
 	if (npivot>0)
 	{
@@ -92,8 +92,15 @@ void Walk::print(FILE *fptr)
 void Walk::scan(FILE *fptr)
 {
 	int i;
-	fscanf(fptr, "%d %d %lf", &nsteps, &generation, &old_energy);
-	for (i = 0; i <= nsteps; i++) steps[i].scan(fptr);
+	double tempr,tempk;
+	fscanf(fptr, "N=%d ind=%d r=%lf k=%lf", &nsteps, &generation, &tempr, &tempk);
+	printf("Start SAW is: N=%d ind=%d r=%lf k=%lf \n", nsteps, generation, tempr, tempk);
+	for (i = 0; i <= nsteps; i++) 
+	{
+		steps[i].scan(fptr); 
+		steps[i].r = tempr;
+		steps[i].k = tempk;
+	}
 	clean_pivot();
 } // end walk::scan()
 
@@ -283,21 +290,8 @@ int Walk::pivot_strictly_saw(Proposal* prop)
 	} // end while 
 
 	// If we reach this point the walk is self-avoiding. 
-	double new_energy = GetEnergy();
-	if (AcceptOrNot(new_energy,old_energy))
-	{
-		//printf("The %d step accepted. new energy: %lf, old energy:%lf  \n", generation,et,old_energy);
-		old_energy = new_energy;
-		add_pivot(pivot_loc, poper, transi);
-		return(count);
-	}
-	else
-	{
-		//printf("The %d step denied. new energy: %lf, old energy:%lf  \n", generation, et, old_energy);
-		//if (MCtrial == MaxTrial) printf("In generation %d, totally %d trial done and all denied.", generation, MaxTrial);
-		printf("error in accept\n");
-		return(-count);
-	}	
+	add_pivot(pivot_loc, poper, transi);
+	return(count);
 } // end pivot_strictly_saw()
 
 void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
@@ -369,7 +363,6 @@ void Walk::simplify()
 
 void Walk::GoOneStep(int stepnum, bool isrecord)
 {
-	generation++;
 	int inner = 0, accept_flag=0;
 	for (inner = 1; inner <= stepnum; inner++)
 	{
@@ -476,7 +469,10 @@ void Walk::Writedown()
 {
 	FILE *fptr;
 	// record the walk itself
-	fptr = fopen(final_walk_fname, "w");
+	char buffer[50]; // <- danger, only storage for 256 characters.
+	sprintf(buffer, "%s%d", final_walk_fname,generation);
+
+	fptr = fopen(buffer, "w");
 	this->print(fptr);
 	fclose(fptr);
 }
@@ -488,8 +484,9 @@ void Walk::run(int outer_steps, int discard)
 	{
 		//GoOneStep(n_inner,true);
 		GoOneStep(n_inner,false);
+		generation++;
+		Writedown();
 	}
-	Writedown();
 	printf("%d + %d * %d MCSs, turn=%lf, accept ratio=%lf\n", discard, outer_steps, n_inner, turn_frac(), SAWaccept*100.0/double(outer_steps*n_inner+discard));
 	//printf("%d\n",SAWaccept);
 	if(npivot!=0) printf("error, npivot at the end of outer run.\n");

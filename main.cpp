@@ -25,9 +25,9 @@ int main(int argc,char *argv[])
 
 	int length=100;
 	const char* init_name="0";
-	int innter_loop = 500;
-	int outer_loop = 1000;
-	int discard = 20000;
+	int innter_loop = 1000;
+	int outer_loop = 2;
+	int discard = 100;
 	
 	if(argc>=2) length=atoi(argv[1]);
 	if(argc>=3) init_name=argv[2];
@@ -36,7 +36,7 @@ int main(int argc,char *argv[])
 	if(argc>=5) outer_loop=atoi(argv[4]); // the forth is the outer loop and fifth is the inner
 	if(argc>=6) innter_loop=atoi(argv[5]);
 	
-	Walk w(length, init_name, innter_loop);
+	Walk w(length, init_name, innter_loop, "FinalWalk");
 	// Using "Walk w; w.run();" to generate a SAW and write it down in "FinalWalk"
 	if(outer_loop==0) {w.run(0,discard); cout<<"the length is "<<length<<" and aucor. time is "<<w.GetAutocorrelation(1000,10)<<endl;}
 	else w.run(outer_loop,discard);
