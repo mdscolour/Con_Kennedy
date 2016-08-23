@@ -334,6 +334,8 @@ void Walk::add_pivot(int pivot_loc, OPERATION_NAME* poper, GPoint<double> trans)
 void Walk::simplify()
 // carry out the pivot operations implicit in the walk, so npivot -> 0 
 {	
+	if(npivot==0){return;}
+
 	OPERATION_NAME*  pOper_ipivot;
 	int ipivot, itime;
 	Sphere pp;

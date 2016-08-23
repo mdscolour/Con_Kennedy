@@ -85,7 +85,8 @@ public:
 	void assign(double xx, double yy, double zz, double rr,double kk) { x = xx; y = yy; z = zz; r = rr; k = kk; }
 	void print(FILE *fptr){ fprintf(fptr, "%lf %lf %lf \n", x, y, z); }
 	void scan(FILE *fptr){ fscanf(fptr, "%lf %lf %lf \n", &x, &y, &z); }
-	int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t > s.r+this->r) ? int(t+(1-s.r-this->r)) : 0); }
+	//int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t > s.r+this->r) ? int(t+(1-s.r-this->r)) : 0); }
+	int WellSeparate(const Sphere& s){ double t = sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)); return((t>=1)?int(t):((t>=(s.r+this->r))?1:0)); }
 	double distance(const Sphere& s){return(sqrt((x-s.x)*(x-s.x) + (y-s.y)*(y-s.y) + (z-s.z)*(z-s.z)));}
 	//double norm(){return(sqrt(x*x + y*y + z*z));}
 	inline void euclidean_op(Sphere* p, GPoint<double>* ref, OpMatrix* op);
@@ -128,13 +129,24 @@ class RMatrix : public Matrix
 public:
 	RMatrix()
 	{
-		int plane = int(RNG_NAME() * 3);
-		double theta = 2 * M_PI*RNG_NAME();
-		if (plane==0)new(this) Matrix(cos(theta), -sin(theta), 0, sin(theta), cos(theta), 0, 0, 0, 1);
-		else if (plane == 1)new(this) Matrix(cos(theta), 0, -sin(theta), 0, 1, 0, sin(theta), 0, cos(theta));
-		else if (plane == 2)new(this) Matrix(1, 0, 0, 0, cos(theta), -sin(theta), 0, sin(theta), cos(theta));
-		else printf("Error in constructing RMatrix\n");
+		double ta = M_PI * RNG_NAME();
+		double phi = 2* M_PI * RNG_NAME();
+		double l =sin(ta)*cos(phi),m = sin(ta)*sin(phi), n = cos(ta);
+
+		double theta = 2* M_PI * RNG_NAME();
+		new(this) Matrix(l*l*(1-cos(theta))+cos(theta), m*l*(1-cos(theta))-n*sin(theta), n*l*(1-cos(theta))+m*sin(theta), 
+			l*m*(1-cos(theta))+n*sin(theta), m*m*(1-cos(theta))+cos(theta), n*m*(1-cos(theta))-l*sin(theta),
+			l*n*(1-cos(theta))-m*sin(theta), m*n*(1-cos(theta))+l*sin(theta), n*n*(1-cos(theta))+cos(theta));
 	}
+// 	RMatrix()
+// 	{
+// 		int plane = int(RNG_NAME() * 3);
+// 		double theta = 2 * M_PI*RNG_NAME();
+// 		if (plane==0)new(this) Matrix(cos(theta), -sin(theta), 0, sin(theta), cos(theta), 0, 0, 0, 1);
+// 		else if (plane == 1)new(this) Matrix(cos(theta), 0, -sin(theta), 0, 1, 0, sin(theta), 0, cos(theta));
+// 		else if (plane == 2)new(this) Matrix(1, 0, 0, 0, cos(theta), -sin(theta), 0, sin(theta), cos(theta));
+// 		else printf("Error in constructing RMatrix\n");
+// 	}
 	//RMatrix(){ new(this)RMatrix(int(15 * 100*100*100 * RNG_NAME())); }
 	RMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
 
@@ -197,22 +209,29 @@ class RefMatrix : public Matrix
 public:
 	RefMatrix()
 	{
-		int isym = int(8 * RNG_NAME());
-		double x = 1, y = 1, z = 1;
-		switch (isym)
-		{
-		case 0:                        break;   // +++
-		case 1:                 z = -1;  break;   // ++-
-		case 2:          y = -1;         break;   // +-+
-		case 3:          y = -1;  z = -1;  break;   // +--
-		case 4:   x = -1;                break;   // -++
-		case 5:   x = -1;         z = -1;  break;   // -+-
-		case 6:   x = -1;  y = -1;         break;   // --+
-		case 7:   x = -1;  y = -1;  z = -1;  break;   // ---
-		default: printf("wrong mirror index, not 0-7 \n"); break;
-		} // end switch on isym_sign
-		new(this) Matrix(x, 0, 0, 0, y, 0, 0, 0, z);
+		double ta = M_PI * RNG_NAME();
+		double phi = 2* M_PI * RNG_NAME();
+		double a =sin(ta)*cos(phi),b = sin(ta)*sin(phi), c = cos(ta);
+		new(this) Matrix(1-2*a*a, -2*a*b, -2*a*c, -2*a*b, 1-2*b*b, -2*b*c, -2*a*c, -2*b*c, 1-2*c*c);
 	}
+// 	RefMatrix()
+// 	{
+// 		int isym = int(8 * RNG_NAME());
+// 		double x = 1, y = 1, z = 1;
+// 		switch (isym)
+// 		{
+// 		case 0:                        break;   // +++
+// 		case 1:                 z = -1;  break;   // ++-
+// 		case 2:          y = -1;         break;   // +-+
+// 		case 3:          y = -1;  z = -1;  break;   // +--
+// 		case 4:   x = -1;                break;   // -++
+// 		case 5:   x = -1;         z = -1;  break;   // -+-
+// 		case 6:   x = -1;  y = -1;         break;   // --+
+// 		case 7:   x = -1;  y = -1;  z = -1;  break;   // ---
+// 		default: printf("wrong mirror index, not 0-7 \n"); break;
+// 		} // end switch on isym_sign
+// 		new(this) Matrix(x, 0, 0, 0, y, 0, 0, 0, z);
+// 	}
 	RefMatrix(Matrix x) :Matrix(x.row1, x.row2, x.row3){}
 	RefMatrix(int isym)
 	{
